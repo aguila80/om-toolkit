@@ -1,4 +1,4 @@
-package com.omtoolkit.app
+ package com.omtoolkit.app
 
 import android.app.Activity
 import android.os.Bundle
@@ -60,5 +60,4 @@ class MainActivity : Activity() {
         params.setMargins(0, 8, 0, 8)
         parent.addView(button, params)
     }
-}    }
 }
