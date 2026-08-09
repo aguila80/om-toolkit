@@ -10,6 +10,8 @@ import android.widget.TextView
 
 class MainActivity : Activity() {
 
+    lateinit var boton: TextView
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -36,7 +38,7 @@ class MainActivity : Activity() {
         texto.textSize = 20f
         texto.gravity = Gravity.CENTER
 
-        val boton = TextView(this)
+        boton = TextView(this)
         boton.text = "\n   🔤  ORDENAR MARCADORES   \n"
         boton.textSize = 20f
         boton.gravity = Gravity.CENTER
@@ -46,19 +48,18 @@ class MainActivity : Activity() {
         pantalla.addView(version)
         pantalla.addView(texto)
         pantalla.addView(boton)
-                boton.setOnClickListener {
-    val intent = android.content.Intent(
-        android.content.Intent.ACTION_OPEN_DOCUMENT
-    )
-    intent.type = "*/*"
-    intent.addCategory(
-        android.content.Intent.CATEGORY_OPENABLE
-    )
-    startActivityForResult(intent, 100)
-}
 
-        setContentView(pantalla)
-    }
+        boton.setOnClickListener {
+            val intent = android.content.Intent(
+                android.content.Intent.ACTION_OPEN_DOCUMENT
+            )
+            intent.type = "*/*"
+            intent.addCategory(
+                android.content.Intent.CATEGORY_OPENABLE
+            )
+            startActivityForResult(intent, 100)
+        }
+
         setContentView(pantalla)
     }
 
@@ -76,4 +77,4 @@ class MainActivity : Activity() {
             }
         }
     }
-}}
+}
