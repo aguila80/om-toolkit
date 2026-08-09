@@ -149,7 +149,7 @@ val listasOrdenadas = documentos
 
 resultado.text =
     "📁 LISTAS ENCONTRADAS: ${listas.size}\n\n" +
-    listas.joinToString("\n")
+    listasOrdenadas.joinToString("\n") { it.second }
 
                 val marcadores = Regex(
                     "<Point",
