@@ -123,6 +123,16 @@ override fun onActivityResult(
                         "❌ No se encontró ningún archivo KML dentro del KMZ"
                     return
                 }
+                val listas = Regex(
+    "<Folder[\\s\\S]*?<name>(.*?)</name>",
+    RegexOption.IGNORE_CASE
+).findAll(contenidoKml)
+    .map { it.groupValues[1] }
+    .toList()
+
+resultado.text =
+    "📁 LISTAS ENCONTRADAS: ${listas.size}\n\n" +
+    listas.joinToString("\n")
 
                 val marcadores = Regex(
                     "<Point",
