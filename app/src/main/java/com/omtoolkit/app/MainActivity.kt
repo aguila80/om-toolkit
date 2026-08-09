@@ -145,11 +145,13 @@ resultado.text =
                 ).findAll(contenidoKml).count()
 
                 resultado.text =
-                    "✅ KMZ leído correctamente\n\n" +
-                    "📄 $nombreEntrada\n\n" +
-                    "📍 Marcadores: $marcadores\n" +
-                    "🚶 Trayectos: $trayectos\n\n" +
-                    "El archivo original NO ha sido modificado."
+    "✅ KMZ leído correctamente\n\n" +
+    "📄 $nombreEntrada\n\n" +
+    "📍 Marcadores: $marcadores\n" +
+    "🚶 Trayectos: $trayectos\n\n" +
+    "📁 LISTAS ENCONTRADAS: ${listas.size}\n\n" +
+    listas.joinToString("\n") +
+    "\n\nEl archivo original NO ha sido modificado."
 
                 boton.text = "📂 SELECCIONAR OTRO KMZ"
 
