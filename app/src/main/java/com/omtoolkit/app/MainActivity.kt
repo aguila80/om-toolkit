@@ -112,37 +112,6 @@ override fun onActivityResult(
                         break
                     }
 
-                    entradaZip = zip.nextEntry
-                }
-
-                zip.close()
-                entrada.close()
-
-                if (contenidoKml.isEmpty()) {
-                    resultado.text =
-                        "❌ No se encontró ningún archivo KML dentro del KMZ"
-                    return
-                }
-                val documentos = Regex(
-    "<Document[\\s\\S]*?</Document>",
-    RegexOption.IGNORE_CASE
-).findAll(contenidoKml)
-    .map { it.value }
-    .toList()
-
-val listas = documentos
-    .map { documento ->
-        Regex(
-            "<name>(.*?)</name>",
-            RegexOption.IGNORE_CASE
-        )
-            .find(documento)
-            ?.groupValues?.get(1)
-            ?.trim()
-            ?: ""
-    }
-    .toList()
-
 val listasOrdenadas = documentos
     .zip(listas)
     .sortedBy { it.second.lowercase() }
