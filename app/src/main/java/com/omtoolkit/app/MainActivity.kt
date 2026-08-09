@@ -59,4 +59,21 @@ class MainActivity : Activity() {
 
         setContentView(pantalla)
     }
-}
+        setContentView(pantalla)
+    }
+
+    override fun onActivityResult(
+        requestCode: Int,
+        resultCode: Int,
+        data: android.content.Intent?
+    ) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode == 100 && resultCode == RESULT_OK) {
+            val archivo = data?.data
+            if (archivo != null) {
+                boton.text = "📂 KMZ seleccionado"
+            }
+        }
+    }
+}}
