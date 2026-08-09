@@ -9,6 +9,7 @@ import android.graphics.Color
 import android.view.Gravity
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.ScrollView
 import java.io.ByteArrayInputStream
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
