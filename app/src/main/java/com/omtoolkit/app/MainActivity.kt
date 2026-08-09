@@ -119,11 +119,21 @@ override fun onActivityResult(
                 entrada.close()
 
                 if (contenidoKml.isEmpty()) {
-                    resultado.text = "❌ No se encontró ningún archivo KML dentro del KMZ"
+                    resultado.text =
+                        "❌ No se encontró ningún archivo KML dentro del KMZ"
                     return
                 }
 
-                val
+                val marcadores = Regex(
+                    "<Point",
+                    RegexOption.IGNORE_CASE
+                ).findAll(contenidoKml).count()
+
+                val trayectos = Regex(
+                    "<gx:Track",
+                    RegexOption.IGNORE_CASE
+                ).findAll(contenidoKml).count()
+
                 resultado.text =
                     "✅ KMZ leído correctamente\n\n" +
                     "📄 $nombreEntrada\n\n" +
