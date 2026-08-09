@@ -26,7 +26,7 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
+val scroll = ScrollView(this)
         val pantalla = LinearLayout(this)
         pantalla.orientation = LinearLayout.VERTICAL
         pantalla.gravity = Gravity.CENTER
