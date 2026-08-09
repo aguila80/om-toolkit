@@ -107,7 +107,8 @@ val scroll = ScrollView(this)
             startActivityForResult(intent, 200)
         }
 
-        setContentView(pantalla)
+        scroll.addView(pantalla)
+setContentView(scroll)
     }
 
     override fun onActivityResult(
