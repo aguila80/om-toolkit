@@ -73,7 +73,17 @@ class MainActivity : Activity() {
         if (requestCode == 100 && resultCode == RESULT_OK) {
             val archivo = data?.data
             if (archivo != null) {
-                boton.text = "📂 KMZ seleccionado"
+    boton.text = "📂 KMZ seleccionado"
+
+    val entrada = contentResolver.openInputStream(archivo)
+
+    if (entrada != null) {
+        val bytes = entrada.readBytes()
+        entrada.close()
+
+        boton.text = "📦 KMZ leído: ${bytes.size} bytes"
+    }
+}
             }
         }
     }
