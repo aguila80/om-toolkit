@@ -47,8 +47,15 @@ class MainActivity : Activity() {
         pantalla.addView(texto)
         pantalla.addView(boton)
                 boton.setOnClickListener {
-            boton.text = "✅ BOTÓN FUNCIONA"
-        }
+    val intent = android.content.Intent(
+        android.content.Intent.ACTION_OPEN_DOCUMENT
+    )
+    intent.type = "*/*"
+    intent.addCategory(
+        android.content.Intent.CATEGORY_OPENABLE
+    )
+    startActivityForResult(intent, 100)
+}
 
         setContentView(pantalla)
     }
