@@ -123,15 +123,7 @@ override fun onActivityResult(
                     return
                 }
 
-                val marcadores = Regex(
-"<Point\b",
-RegexOption.IGNORE_CASE
-).findAll(contenidoKml).count()
-
-val trayectos = Regex(
-"<gx:Track\b",
-RegexOption.IGNORE_CASE
-).findAll(contenidoKml).count()
+                val
                 resultado.text =
                     "✅ KMZ leído correctamente\n\n" +
                     "📄 $nombreEntrada\n\n" +
