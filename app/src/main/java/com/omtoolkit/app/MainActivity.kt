@@ -96,25 +96,7 @@ override fun onActivityResult(
                 val zip = ZipInputStream(entrada)
 
                 var nombreEntrada: String? = null
-                var contenidoKml = ""
-
-                var entradaZip = zip.nextEntry
-
-                while (entradaZip != null) {
-
-                    if (entradaZip.name.endsWith(".kml")) {
-
-                        nombreEntrada = entradaZip.name
-
-                        val datos = zip.readBytes()
-                        contenidoKml = String(datos, Charsets.UTF_8)
-
-                        break
-                    }
-
-val listasOrdenadas = documentos
-    .zip(listas)
-    .sortedBy { it.second.lowercase() }
+                
 package com.omtoolkit.app
 
 import android.app.Activity
