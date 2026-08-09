@@ -64,26 +64,25 @@ class MainActivity : Activity() {
     }
 
     override fun onActivityResult(
-        requestCode: Int,
-        resultCode: Int,
-        data: android.content.Intent?
-    ) {
-        super.onActivityResult(requestCode, resultCode, data)
+    requestCode: Int,
+    resultCode: Int,
+    data: android.content.Intent?
+) {
+    super.onActivityResult(requestCode, resultCode, data)
 
-        if (requestCode == 100 && resultCode == RESULT_OK) {
-            val archivo = data?.data
-            if (archivo != null) {
-    boton.text = "📂 KMZ seleccionado"
+    if (requestCode == 100 && resultCode == RESULT_OK) {
+        val archivo = data?.data
 
-    val entrada = contentResolver.openInputStream(archivo)
+        if (archivo != null) {
+            boton.text = "📂 KMZ seleccionado"
 
-    if (entrada != null) {
-        val bytes = entrada.readBytes()
-        entrada.close()
+            val entrada = contentResolver.openInputStream(archivo)
 
-        boton.text = "📦 KMZ leído: ${bytes.size} bytes"
-    }
-}
+            if (entrada != null) {
+                val bytes = entrada.readBytes()
+                entrada.close()
+
+                boton.text = "📦 KMZ leído: ${bytes.size} bytes"
             }
         }
     }
