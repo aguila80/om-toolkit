@@ -46,6 +46,9 @@ class MainActivity : Activity() {
         pantalla.addView(version)
         pantalla.addView(texto)
         pantalla.addView(boton)
+                boton.setOnClickListener {
+            boton.text = "✅ BOTÓN FUNCIONA"
+        }
 
         setContentView(pantalla)
     }
