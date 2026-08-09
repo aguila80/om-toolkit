@@ -145,7 +145,7 @@ val listas = documentos
 
 val listasOrdenadas = documentos
     .zip(listas)
-    .sortedBy { it.second.lowercase() })
+    .sortedBy { it.second.lowercase() }
 
 resultado.text =
     "📁 LISTAS ENCONTRADAS: ${listas.size}\n\n" +
