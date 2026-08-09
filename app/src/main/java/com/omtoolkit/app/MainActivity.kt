@@ -124,10 +124,10 @@ override fun onActivityResult(
                     return
                 }
                 val listas = Regex(
-    "<Folder[\\s\\S]*?<name>(.*?)</name>",
+    "<Document[\\s\\S]*?<name>(.*?)</name>",
     RegexOption.IGNORE_CASE
 ).findAll(contenidoKml)
-    .map { it.groupValues[1] }
+    .map { it.groupValues[1].trim() }
     .toList()
 
 resultado.text =
