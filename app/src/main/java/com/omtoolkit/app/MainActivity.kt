@@ -28,8 +28,11 @@ class MainActivity : Activity() {
 
     var listasEncontradas = mutableListOf<ListaKml>()
 
-    // La lista que realmente se pulsa
     var listaParaGuardar: ListaKml? = null
+
+    // Partes originales del KML
+    var cabeceraKml: String = ""
+    var cierreKml: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,7 +51,7 @@ class MainActivity : Activity() {
         titulo.gravity = Gravity.CENTER
 
         val version = TextView(this)
-        version.text = "VERSIÓN 0.8"
+        version.text = "VERSIÓN 0.9"
         version.textSize = 24f
         version.setTextColor(Color.rgb(0, 140, 70))
         version.gravity = Gravity.CENTER
@@ -191,6 +194,35 @@ class MainActivity : Activity() {
                 }
 
                 // ====================================================
+                // CONSERVAR LA CABECERA ORIGINAL DEL KML
+                // ====================================================
+
+                val posicionKml =
+                    Regex(
+                        "<kml\\b[^>]*>",
+                        RegexOption.IGNORE_CASE
+                    )
+                        .find(contenidoKml)
+
+                if (posicionKml != null) {
+
+                    cabeceraKml =
+                        contenidoKml.substring(
+                            0,
+                            posicionKml.range.last + 1
+                        )
+
+                    cierreKml = "</kml>"
+
+                } else {
+
+                    resultado.text =
+                        "❌ El KML no tiene una estructura válida"
+
+                    return
+                }
+
+                // ====================================================
                 // BUSCAR LOS DOCUMENT
                 // ====================================================
 
@@ -323,12 +355,6 @@ class MainActivity : Activity() {
 
             try {
 
-                resultado.text =
-                    "💾 GUARDANDO:\n\n" +
-                    "📁 ${lista.nombre}\n\n" +
-                    "📍 Marcadores: ${lista.marcadores}\n" +
-                    "🚶 Trayectos: ${lista.trayectos}"
-
                 val salida =
                     contentResolver
                         .openOutputStream(destino)
@@ -341,20 +367,27 @@ class MainActivity : Activity() {
                     return
                 }
 
+                /*
+                 * IMPORTANTE:
+                 *
+                 * No construimos una cabecera KML nueva.
+                 *
+                 * Conservamos exactamente la cabecera
+                 * del KML que abrió la aplicación.
+                 *
+                 * Esto conserva namespaces como gx:
+                 * necesarios para los trayectos.
+                 */
+
+                val kmlFinal =
+                    cabeceraKml +
+                    "\n" +
+                    lista.documento +
+                    "\n" +
+                    cierreKml
+
                 val zipSalida =
                     ZipOutputStream(salida)
-
-                // ====================================================
-                // CREAR UN KML CON UN ÚNICO DOCUMENT
-                // ====================================================
-
-                val kml =
-                    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                    "<kml xmlns=\"http://www.opengis.net/kml/2.2\" " +
-                    "xmlns:gx=\"http://www.google.com/kml/ext/2.2\" " +
-                    "xmlns:mwm=\"https://organicmaps.app\">\n" +
-                    lista.documento +
-                    "\n</kml>"
 
                 val entradaKml =
                     ZipEntry("doc.kml")
@@ -364,7 +397,7 @@ class MainActivity : Activity() {
                 )
 
                 zipSalida.write(
-                    kml.toByteArray(
+                    kmlFinal.toByteArray(
                         Charsets.UTF_8
                     )
                 )
@@ -458,10 +491,6 @@ class MainActivity : Activity() {
             20,
             20
         )
-
-        // ============================================================
-        // CADA BOTÓN QUEDA ASOCIADO A SU PROPIA LISTA
-        // ============================================================
 
         guardar.setOnClickListener {
 
