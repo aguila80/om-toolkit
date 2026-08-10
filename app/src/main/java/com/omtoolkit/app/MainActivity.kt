@@ -1,5 +1,3 @@
- 
-                
 package com.omtoolkit.app
 
 import android.app.Activity
@@ -24,9 +22,15 @@ class MainActivity : Activity() {
     var kmlOrdenado: String = ""
     var nombreKml: String = "doc.kml"
 
+    // Conservamos todos los archivos del KMZ original
+    var entradasOriginales =
+        mutableListOf<Pair<String, ByteArray>>()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-val scroll = ScrollView(this)
+
+        val scroll = ScrollView(this)
+
         val pantalla = LinearLayout(this)
         pantalla.orientation = LinearLayout.VERTICAL
         pantalla.gravity = Gravity.CENTER
@@ -39,7 +43,7 @@ val scroll = ScrollView(this)
         titulo.gravity = Gravity.CENTER
 
         val version = TextView(this)
-        version.text = "VERSIÓN 0.4"
+        version.text = "VERSIÓN 0.5"
         version.textSize = 24f
         version.setTextColor(Color.rgb(0, 140, 70))
         version.gravity = Gravity.CENTER
@@ -77,20 +81,27 @@ val scroll = ScrollView(this)
         pantalla.addView(resultado)
 
         boton.setOnClickListener {
+
             val intent = android.content.Intent(
                 android.content.Intent.ACTION_OPEN_DOCUMENT
             )
+
             intent.type = "application/vnd.google-earth.kmz"
+
             intent.addCategory(
                 android.content.Intent.CATEGORY_OPENABLE
             )
+
             startActivityForResult(intent, 100)
         }
 
         guardar.setOnClickListener {
 
             if (kmlOrdenado.isEmpty()) {
-                resultado.text = "❌ No hay ningún KMZ ordenado para guardar."
+
+                resultado.text =
+                    "❌ No hay ningún KMZ ordenado para guardar."
+
                 return@setOnClickListener
             }
 
@@ -99,6 +110,7 @@ val scroll = ScrollView(this)
             )
 
             intent.type = "application/vnd.google-earth.kmz"
+
             intent.putExtra(
                 android.content.Intent.EXTRA_TITLE,
                 "OrganicMaps_ordenado.kmz"
@@ -108,7 +120,8 @@ val scroll = ScrollView(this)
         }
 
         scroll.addView(pantalla)
-setContentView(scroll)
+
+        setContentView(scroll)
     }
 
     override fun onActivityResult(
@@ -116,9 +129,20 @@ setContentView(scroll)
         resultCode: Int,
         data: android.content.Intent?
     ) {
-        super.onActivityResult(requestCode, resultCode, data)
+        super.onActivityResult(
+            requestCode,
+            resultCode,
+            data
+        )
 
-        if (requestCode == 100 && resultCode == RESULT_OK) {
+        // ============================================================
+        // SELECCIONAR KMZ
+        // ============================================================
+
+        if (
+            requestCode == 100 &&
+            resultCode == RESULT_OK
+        ) {
 
             val archivo = data?.data
 
@@ -130,18 +154,27 @@ setContentView(scroll)
                         contentResolver.openInputStream(archivo)
 
                     if (entradaOriginal == null) {
-                        resultado.text = "❌ No se pudo abrir el KMZ"
+
+                        resultado.text =
+                            "❌ No se pudo abrir el KMZ"
+
                         return
                     }
 
-                    val bytesOriginales = entradaOriginal.readBytes()
+                    val bytesOriginales =
+                        entradaOriginal.readBytes()
+
                     entradaOriginal.close()
 
-                    val zip = ZipInputStream(
-                        ByteArrayInputStream(bytesOriginales)
-                    )
+                    // Guardamos todos los archivos del KMZ
+                    entradasOriginales.clear()
 
-                    val entradas = mutableListOf<Pair<String, ByteArray>>()
+                    val zip =
+                        ZipInputStream(
+                            ByteArrayInputStream(
+                                bytesOriginales
+                            )
+                        )
 
                     var contenidoKml = ""
                     var nombreEntradaKml = "doc.kml"
@@ -150,17 +183,30 @@ setContentView(scroll)
 
                     while (entradaZip != null) {
 
-                        val datos = zip.readBytes()
+                        val datos =
+                            zip.readBytes()
 
-                        entradas.add(
-                            Pair(entradaZip.name, datos)
+                        entradasOriginales.add(
+                            Pair(
+                                entradaZip.name,
+                                datos
+                            )
                         )
 
-                        if (entradaZip.name.endsWith(".kml")) {
+                        if (
+                            entradaZip.name
+                                .lowercase()
+                                .endsWith(".kml")
+                        ) {
 
-                            nombreEntradaKml = entradaZip.name
+                            nombreEntradaKml =
+                                entradaZip.name
+
                             contenidoKml =
-                                String(datos, Charsets.UTF_8)
+                                String(
+                                    datos,
+                                    Charsets.UTF_8
+                                )
                         }
 
                         entradaZip = zip.nextEntry
@@ -176,49 +222,81 @@ setContentView(scroll)
                         return
                     }
 
-                    nombreKml = nombreEntradaKml
+                    nombreKml =
+                        nombreEntradaKml
 
-                    val documentos = Regex(
-                        "<Document[\\s\\S]*?</Document>",
-                        RegexOption.IGNORE_CASE
-                    )
-                        .findAll(contenidoKml)
-                        .map { it.value }
-                        .toList()
+                    // ====================================================
+                    // BUSCAR LOS DOCUMENT
+                    // ====================================================
 
-                    val listas = documentos
-                        .map { documento ->
+                    val documentos =
+                        Regex(
+                            "<Document\\b[\\s\\S]*?</Document>",
+                            RegexOption.IGNORE_CASE
+                        )
+                            .findAll(contenidoKml)
+                            .map {
+                                it.value
+                            }
+                            .toList()
+
+                    // ====================================================
+                    // OBTENER NOMBRE DE CADA LISTA
+                    // ====================================================
+
+                    val listas =
+                        documentos.map { documento ->
 
                             Regex(
                                 "<name>(.*?)</name>",
                                 RegexOption.IGNORE_CASE
                             )
                                 .find(documento)
-                                ?.groupValues?.get(1)
+                                ?.groupValues
+                                ?.get(1)
                                 ?.trim()
                                 ?: ""
-                        }
-                        .toList()
 
-                    val listasOrdenadas = documentos
-                        .zip(listas)
-                        .sortedBy {
-                            it.second.lowercase()
-                        }
+                        }.toList()
 
-                    val marcadores = Regex(
-                        "<Point",
-                        RegexOption.IGNORE_CASE
-                    )
-                        .findAll(contenidoKml)
-                        .count()
+                    // ====================================================
+                    // ORDEN ALFABÉTICO
+                    // ====================================================
 
-                    val trayectos = Regex(
-                        "<gx:Track",
-                        RegexOption.IGNORE_CASE
-                    )
-                        .findAll(contenidoKml)
-                        .count()
+                    val listasOrdenadas =
+                        documentos
+                            .zip(listas)
+                            .sortedBy {
+                                it.second.lowercase()
+                            }
+
+                    // ====================================================
+                    // CONTAR MARCADORES
+                    // ====================================================
+
+                    val marcadores =
+                        Regex(
+                            "<Point\\b",
+                            RegexOption.IGNORE_CASE
+                        )
+                            .findAll(contenidoKml)
+                            .count()
+
+                    // ====================================================
+                    // CONTAR TRAYECTOS
+                    // ====================================================
+
+                    val trayectos =
+                        Regex(
+                            "<gx:Track\\b",
+                            RegexOption.IGNORE_CASE
+                        )
+                            .findAll(contenidoKml)
+                            .count()
+
+                    // ====================================================
+                    // RECONSTRUIR KML ORDENADO
+                    // ====================================================
 
                     if (documentos.size > 1) {
 
@@ -262,13 +340,19 @@ setContentView(scroll)
 
                         } else {
 
-                            kmlOrdenado = contenidoKml
+                            kmlOrdenado =
+                                contenidoKml
                         }
 
                     } else {
 
-                        kmlOrdenado = contenidoKml
+                        kmlOrdenado =
+                            contenidoKml
                     }
+
+                    // ====================================================
+                    // MOSTRAR RESULTADO
+                    // ====================================================
 
                     resultado.text =
                         "✅ KMZ leído correctamente\n\n" +
@@ -282,7 +366,8 @@ setContentView(scroll)
                         "\n\n" +
                         "El original NO ha sido modificado."
 
-                    guardar.visibility = TextView.VISIBLE
+                    guardar.visibility =
+                        TextView.VISIBLE
 
                     boton.text =
                         "📂 SELECCIONAR OTRO KMZ"
@@ -290,12 +375,20 @@ setContentView(scroll)
                 } catch (e: Exception) {
 
                     resultado.text =
-                        "❌ Error al analizar el KMZ:\n\n${e.message}"
+                        "❌ Error al analizar el KMZ:\n\n" +
+                        e.message
                 }
             }
         }
 
-        if (requestCode == 200 && resultCode == RESULT_OK) {
+        // ============================================================
+        // GUARDAR KMZ
+        // ============================================================
+
+        if (
+            requestCode == 200 &&
+            resultCode == RESULT_OK
+        ) {
 
             val destino = data?.data
 
@@ -304,7 +397,8 @@ setContentView(scroll)
                 try {
 
                     val salida =
-                        contentResolver.openOutputStream(destino)
+                        contentResolver
+                            .openOutputStream(destino)
 
                     if (salida == null) {
 
@@ -317,37 +411,57 @@ setContentView(scroll)
                     val zipSalida =
                         ZipOutputStream(salida)
 
-                    /*
-                     * Volvemos a abrir el KMZ original
-                     * para conservar todos sus archivos.
-                     */
-                    // En esta primera versión solo escribimos
-                    // el KML ordenado.
+                    // ====================================================
+                    // RECONSTRUIR TODO EL KMZ ORIGINAL
+                    // ====================================================
 
-                    val entradaKml =
-                        ZipEntry(nombreKml)
+                    for (
+                        entrada in entradasOriginales
+                    ) {
 
-                    zipSalida.putNextEntry(entradaKml)
+                        val nombre =
+                            entrada.first
 
-                    zipSalida.write(
-                        kmlOrdenado.toByteArray(
-                            Charsets.UTF_8
+                        val datos =
+                            entrada.second
+
+                        val zipEntry =
+                            ZipEntry(nombre)
+
+                        zipSalida.putNextEntry(
+                            zipEntry
                         )
-                    )
 
-                    zipSalida.closeEntry()
+                        if (
+                            nombre == nombreKml
+                        ) {
+
+                            zipSalida.write(
+                                kmlOrdenado.toByteArray(
+                                    Charsets.UTF_8
+                                )
+                            )
+
+                        } else {
+
+                            zipSalida.write(datos)
+                        }
+
+                        zipSalida.closeEntry()
+                    }
 
                     zipSalida.close()
                     salida.close()
 
                     resultado.text =
                         "✅ KMZ ORDENADO GUARDADO\n\n" +
-                        "📁 Las listas han sido ordenadas " +
-                        "alfabéticamente.\n\n" +
-                        "📍 El contenido de las listas " +
-                        "no ha sido reordenado."
+                        "📁 Listas: ${listasOrdenadasTexto()}\n\n" +
+                        "📦 Se han conservado todos los archivos " +
+                        "del KMZ original.\n\n" +
+                        "📍 Marcadores y trayectos conservados."
 
-                    guardar.visibility = TextView.GONE
+                    guardar.visibility =
+                        TextView.GONE
 
                 } catch (e: Exception) {
 
@@ -357,5 +471,39 @@ setContentView(scroll)
                 }
             }
         }
+    }
+
+    // ================================================================
+    // TEXTO AUXILIAR PARA MOSTRAR LAS LISTAS
+    // ================================================================
+
+    private fun listasOrdenadasTexto(): String {
+
+        val documentos =
+            Regex(
+                "<Document\\b[\\s\\S]*?</Document>",
+                RegexOption.IGNORE_CASE
+            )
+                .findAll(kmlOrdenado)
+                .map {
+                    it.value
+                }
+                .toList()
+
+        return documentos
+            .map { documento ->
+
+                Regex(
+                    "<name>(.*?)</name>",
+                    RegexOption.IGNORE_CASE
+                )
+                    .find(documento)
+                    ?.groupValues
+                    ?.get(1)
+                    ?.trim()
+                    ?: ""
+
+            }
+            .joinToString(" → ")
     }
 }
