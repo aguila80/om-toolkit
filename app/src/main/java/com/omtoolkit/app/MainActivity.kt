@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.graphics.Typeface
 import android.graphics.Color
 import android.view.Gravity
-import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.ScrollView
@@ -29,9 +28,8 @@ class MainActivity : Activity() {
 
     var listasEncontradas = mutableListOf<ListaKml>()
 
-    var listaParaGuardar = -1
-
-    var nombreKmlOriginal = "OrganicMaps.kml"
+    // La lista que realmente hemos pulsado
+    var listaParaGuardar: ListaKml? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,7 +48,7 @@ class MainActivity : Activity() {
         titulo.gravity = Gravity.CENTER
 
         val version = TextView(this)
-        version.text = "VERSIÓN 0.6"
+        version.text = "VERSIÓN 0.7"
         version.textSize = 24f
         version.setTextColor(Color.rgb(0, 140, 70))
         version.gravity = Gravity.CENTER
@@ -154,7 +152,6 @@ class MainActivity : Activity() {
                     )
 
                 var contenidoKml = ""
-                var nombreKml = "OrganicMaps.kml"
 
                 var entradaZip =
                     zip.nextEntry
@@ -166,9 +163,6 @@ class MainActivity : Activity() {
                             .lowercase()
                             .endsWith(".kml")
                     ) {
-
-                        nombreKml =
-                            entradaZip.name
 
                         val datos =
                             zip.readBytes()
@@ -196,11 +190,8 @@ class MainActivity : Activity() {
                     return
                 }
 
-                nombreKmlOriginal =
-                    nombreKml
-
                 // ====================================================
-                // BUSCAR DOCUMENTOS COMPLETOS
+                // BUSCAR DOCUMENTS
                 // ====================================================
 
                 val documentos =
@@ -217,7 +208,7 @@ class MainActivity : Activity() {
                 if (documentos.isEmpty()) {
 
                     resultado.text =
-                        "❌ No se encontraron listas en el KML"
+                        "❌ No se encontraron listas"
 
                     return
                 }
@@ -225,7 +216,7 @@ class MainActivity : Activity() {
                 listasEncontradas.clear()
 
                 // ====================================================
-                // ANALIZAR CADA LISTA
+                // ANALIZAR CADA DOCUMENT
                 // ====================================================
 
                 for (documento in documentos) {
@@ -279,7 +270,7 @@ class MainActivity : Activity() {
                         .toMutableList()
 
                 // ====================================================
-                // MOSTRAR RESULTADO
+                // MOSTRAR LISTAS
                 // ====================================================
 
                 listaContenedor.removeAllViews()
@@ -289,11 +280,9 @@ class MainActivity : Activity() {
                     "📁 LISTAS ENCONTRADAS: " +
                     listasEncontradas.size
 
-                for (
-                    indice in listasEncontradas.indices
-                ) {
+                for (lista in listasEncontradas) {
 
-                    crearBloqueLista(indice)
+                    crearBloqueLista(lista)
                 }
 
                 boton.text =
@@ -308,7 +297,7 @@ class MainActivity : Activity() {
         }
 
         // ============================================================
-        // GUARDAR UNA LISTA
+        // GUARDAR LISTA SELECCIONADA
         // ============================================================
 
         if (
@@ -318,20 +307,31 @@ class MainActivity : Activity() {
 
             val destino = data?.data
 
+            val lista =
+                listaParaGuardar
+
             if (
                 destino == null ||
-                listaParaGuardar < 0 ||
-                listaParaGuardar >= listasEncontradas.size
+                lista == null
             ) {
+
+                resultado.text =
+                    "❌ No se ha seleccionado ninguna lista"
+
                 return
             }
 
             try {
 
-                val lista =
-                    listasEncontradas[
-                        listaParaGuardar
-                    ]
+                // ----------------------------------------------------
+                // MOSTRAR EXACTAMENTE QUÉ VAMOS A GUARDAR
+                // ----------------------------------------------------
+
+                resultado.text =
+                    "💾 GUARDANDO ESTA LISTA:\n\n" +
+                    "📁 ${lista.nombre}\n\n" +
+                    "📍 Marcadores: ${lista.marcadores}\n" +
+                    "🚶 Trayectos: ${lista.trayectos}"
 
                 val salida =
                     contentResolver
@@ -348,20 +348,17 @@ class MainActivity : Activity() {
                 val zipSalida =
                     ZipOutputStream(salida)
 
-                // ====================================================
-                // CREAR KML INDEPENDIENTE
-                // ====================================================
+                // ----------------------------------------------------
+                // CREAR KML
+                // ----------------------------------------------------
 
                 val kml =
                     "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                     "<kml xmlns=\"http://www.opengis.net/kml/2.2\" " +
-                    "xmlns:gx=\"http://www.google.com/kml/ext/2.2\">\n" +
+                    "xmlns:gx=\"http://www.google.com/kml/ext/2.2\" " +
+                    "xmlns:mwm=\"https://organicmaps.app\">\n" +
                     lista.documento +
                     "\n</kml>"
-
-                // ====================================================
-                // NOMBRE DEL KML
-                // ====================================================
 
                 val nombreKml =
                     nombreArchivoSeguro(
@@ -386,16 +383,16 @@ class MainActivity : Activity() {
                 zipSalida.close()
                 salida.close()
 
+                // ----------------------------------------------------
+                // RESULTADO FINAL
+                // ----------------------------------------------------
+
                 resultado.text =
                     "✅ LISTA GUARDADA\n\n" +
                     "📁 ${lista.nombre}\n\n" +
-                    "📍 Marcadores: " +
-                    lista.marcadores +
-                    "\n🚶 Trayectos: " +
-                    lista.trayectos +
-                    "\n\n" +
-                    "El KMZ es independiente y " +
-                    "conserva el contenido de esta lista."
+                    "📍 Marcadores: ${lista.marcadores}\n" +
+                    "🚶 Trayectos: ${lista.trayectos}\n\n" +
+                    "KMZ creado correctamente."
 
             } catch (e: Exception) {
 
@@ -407,15 +404,12 @@ class MainActivity : Activity() {
     }
 
     // ================================================================
-    // CREAR BLOQUE VISUAL PARA CADA LISTA
+    // CREAR BLOQUE DE UNA LISTA
     // ================================================================
 
     private fun crearBloqueLista(
-        indice: Int
+        lista: ListaKml
     ) {
-
-        val lista =
-            listasEncontradas[indice]
 
         val separador =
             TextView(this)
@@ -424,7 +418,8 @@ class MainActivity : Activity() {
             "────────────────────────"
 
         separador.textSize = 16f
-        separador.gravity = Gravity.CENTER
+        separador.gravity =
+            Gravity.CENTER
 
         val nombre =
             TextView(this)
@@ -476,10 +471,20 @@ class MainActivity : Activity() {
             20
         )
 
+        // ============================================================
+        // AQUÍ ESTÁ LA CORRECCIÓN IMPORTANTE
+        // ============================================================
+
         guardar.setOnClickListener {
 
-            listaParaGuardar =
-                indice
+            // Guardamos EL OBJETO lista, no su posición.
+            listaParaGuardar = lista
+
+            resultado.text =
+                "📌 LISTA SELECCIONADA:\n\n" +
+                "📁 ${lista.nombre}\n" +
+                "📍 ${lista.marcadores} marcadores\n" +
+                "🚶 ${lista.trayectos} trayectos"
 
             val intent =
                 android.content.Intent(
@@ -520,7 +525,7 @@ class MainActivity : Activity() {
     }
 
     // ================================================================
-    // LIMPIAR NOMBRES PARA UTILIZARLOS COMO ARCHIVO
+    // NOMBRE DE ARCHIVO SEGURO
     // ================================================================
 
     private fun nombreArchivoSeguro(
