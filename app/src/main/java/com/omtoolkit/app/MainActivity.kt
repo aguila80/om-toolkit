@@ -389,10 +389,8 @@ class MainActivity : Activity() {
                 // ====================================================
 
                 val documentoLimpio =
-    limpiarMarcadoresDuplicados(
-        eliminarTracksDuplicados(
-            lista.documento
-        )
+    eliminarTracksDuplicados(
+        lista.documento
     )
 
                 // ====================================================
@@ -686,66 +684,7 @@ class MainActivity : Activity() {
 // LIMPIAR MARCADORES DUPLICADOS DENTRO DE CADA LISTA
 // ================================================================
 
-private fun limpiarMarcadoresDuplicados(
-    documento: String
-): String {
 
-    val placemarks =
-        Regex(
-            "<Placemark\\b[\\s\\S]*?</Placemark>",
-            RegexOption.IGNORE_CASE
-        )
-            .findAll(documento)
-            .map { it.value }
-            .toList()
-
-    val vistos = mutableSetOf<String>()
-
-    var resultadoDocumento = documento
-
-    for (placemark in placemarks) {
-
-        val nombre =
-            Regex(
-                "<name>([\\s\\S]*?)</name>",
-                RegexOption.IGNORE_CASE
-            )
-                .find(placemark)
-                ?.groupValues
-                ?.get(1)
-                ?.trim()
-                ?: ""
-
-        val coordenadas =
-            Regex(
-                "<coordinates>([\\s\\S]*?)</coordinates>",
-                RegexOption.IGNORE_CASE
-            )
-                .find(placemark)
-                ?.groupValues
-                ?.get(1)
-                ?.trim()
-                ?: ""
-
-        val clave =
-            nombre + "|" + coordenadas
-
-        if (clave in vistos) {
-
-            resultadoDocumento =
-                resultadoDocumento.replaceFirst(
-                    placemark,
-                    ""
-                )
-
-        } else {
-
-            vistos.add(clave)
-        }
-    }
-
-    return resultadoDocumento
-}
     // ================================================================
     // LIMPIAR NOMBRE DE ARCHIVO
     // ================================================================
