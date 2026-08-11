@@ -389,9 +389,11 @@ class MainActivity : Activity() {
                 // ====================================================
 
                 val documentoLimpio =
-                    eliminarTracksDuplicados(
-                        lista.documento
-                    )
+    limpiarMarcadoresDuplicados(
+        eliminarTracksDuplicados(
+            lista.documento
+        )
+    )
 
                 // ====================================================
                 // CONSTRUIR KML FINAL
