@@ -25,11 +25,12 @@ class MainActivity : Activity() {
     )
 
     data class ListaKml(
-        val nombre: String,
-        val documento: String,
-        val marcadores: Int,
-        val trayectos: Int
-    )
+    val nombre: String,
+    val documento: String,
+    val marcadores: Int,
+    val trayectos: Int,
+    val archivoKml: String
+)
 
     var entradasOriginales = mutableListOf<EntradaZip>()
 
@@ -234,21 +235,26 @@ class MainActivity : Activity() {
                 cierreKml = "</kml>"
 
                 // ====================================================
-                // EXTRAER DOCUMENTS
+                // EXTRAER TODAS LAS LISTAS DEL KMZ
+                //
+                // Organic Maps puede guardar:
+                // 1. Una lista directamente en un KML
+                // 2. Un backup completo con muchos KML dentro de /files/
                 // ====================================================
 
-                val documentos =
-                    Regex(
-                        "<Document\\b[\\s\\S]*?</Document>",
-                        RegexOption.IGNORE_CASE
-                    )
-                        .findAll(contenidoKml)
-                        .map {
-                            it.value
-                        }
-                        .toList()
+                listasEncontradas.clear()
 
-                if (documentos.isEmpty()) {
+                val archivosKml =
+                    entradasOriginales
+                        .filter {
+                            it.nombre
+                                .lowercase()
+                                .endsWith(".kml") &&
+                            it.nombre
+                                .lowercase() != "doc.kml"
+                        }
+
+                if (archivosKml.isEmpty()) {
 
                     resultado.text =
                         "❌ No se encontraron listas"
@@ -256,20 +262,36 @@ class MainActivity : Activity() {
                     return
                 }
 
-                listasEncontradas.clear()
+                for (archivoKml in archivosKml) {
 
-                // ====================================================
-                // ANALIZAR CADA DOCUMENT
-                // ====================================================
+                    val contenido =
+                        String(
+                            archivoKml.datos,
+                            Charsets.UTF_8
+                        )
 
-                for (documento in documentos) {
+                    val documento =
+                        Regex(
+                            "<Document\\b[\\s\\S]*?</Document>",
+                            RegexOption.IGNORE_CASE
+                        )
+                            .find(
+                                contenido
+                            )
+                            ?.value
+
+                    if (documento == null) {
+                        continue
+                    }
 
                     val nombres =
                         Regex(
                             "<name>([\\s\\S]*?)</name>",
                             RegexOption.IGNORE_CASE
                         )
-                            .findAll(documento)
+                            .findAll(
+                                documento
+                            )
                             .map {
                                 it.groupValues[1].trim()
                             }
@@ -277,14 +299,18 @@ class MainActivity : Activity() {
 
                     val nombre =
                         nombres.firstOrNull()
-                            ?: "Lista sin nombre"
+                            ?: archivoKml.nombre
+                                .substringAfterLast("/")
+                                .removeSuffix(".kml")
 
                     val marcadores =
                         Regex(
                             "<Point\\b",
                             RegexOption.IGNORE_CASE
                         )
-                            .findAll(documento)
+                            .findAll(
+                                documento
+                            )
                             .count()
 
                     val trayectos =
@@ -292,7 +318,9 @@ class MainActivity : Activity() {
                             "<gx:Track\\b",
                             RegexOption.IGNORE_CASE
                         )
-                            .findAll(documento)
+                            .findAll(
+                                documento
+                            )
                             .count()
 
                     listasEncontradas.add(
@@ -300,9 +328,18 @@ class MainActivity : Activity() {
                             nombre,
                             documento,
                             marcadores,
-                            trayectos
+                            trayectos,
+                            archivoKml.nombre
                         )
                     )
+                }
+
+                if (listasEncontradas.isEmpty()) {
+
+                    resultado.text =
+                        "❌ No se encontraron listas"
+
+                    return
                 }
 
                 // ====================================================
@@ -310,11 +347,11 @@ class MainActivity : Activity() {
                 // ====================================================
 
                 listasEncontradas =
-    listasEncontradas
-        .sortedBy {
-            claveOrdenacion(it.nombre)
-        }
-        .toMutableList()
+                    listasEncontradas
+                        .sortedBy {
+                            claveOrdenacion(it.nombre)
+                        }
+                        .toMutableList()
                 // ====================================================
                 // MOSTRAR LISTAS
                 // ====================================================
