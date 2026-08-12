@@ -389,8 +389,10 @@ class MainActivity : Activity() {
                 // ====================================================
 
                 val documentoLimpio =
-    eliminarTracksDuplicados(
-        lista.documento
+    eliminarMarcadoresDuplicados(
+        eliminarTracksDuplicados(
+            lista.documento
+        )
     )
 
                 // ====================================================
@@ -688,7 +690,53 @@ class MainActivity : Activity() {
     // ================================================================
     // LIMPIAR NOMBRE DE ARCHIVO
     // ================================================================
+    // ================================================================
+    // ELIMINAR SOLO MARCADORES COMPLETAMENTE IDÉNTICOS
+    // ================================================================
 
+    private fun eliminarMarcadoresDuplicados(
+        documento: String
+    ): String {
+
+        val placemarks =
+            Regex(
+                "<Placemark\\b[\\s\\S]*?</Placemark>",
+                RegexOption.IGNORE_CASE
+            )
+                .findAll(documento)
+                .map {
+                    it.value
+                }
+                .toList()
+
+        if (placemarks.size <= 1) {
+            return documento
+        }
+
+        val vistos =
+            mutableSetOf<String>()
+
+        var resultadoDocumento =
+            documento
+
+        for (placemark in placemarks) {
+
+            if (vistos.contains(placemark)) {
+
+                resultadoDocumento =
+                    resultadoDocumento.replaceFirst(
+                        Regex.escape(placemark).toRegex(),
+                        ""
+                    )
+
+            } else {
+
+                vistos.add(placemark)
+            }
+        }
+
+        return resultadoDocumento
+    }
     private fun nombreSeguro(
         nombre: String
     ): String {
