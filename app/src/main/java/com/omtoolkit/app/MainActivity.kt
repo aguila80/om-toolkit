@@ -310,12 +310,11 @@ class MainActivity : Activity() {
                 // ====================================================
 
                 listasEncontradas =
-                    listasEncontradas
-                        .sortedBy {
-                            it.nombre.lowercase()
-                        }
-                        .toMutableList()
-
+    listasEncontradas
+        .sortedBy {
+            claveOrdenacion(it.nombre)
+        }
+        .toMutableList()
                 // ====================================================
                 // MOSTRAR LISTAS
                 // ====================================================
@@ -736,6 +735,34 @@ class MainActivity : Activity() {
         }
 
         return resultadoDocumento
+    }
+        // ================================================================
+    // CLAVE PARA ORDENAR LISTAS
+    // ================================================================
+
+    private fun claveOrdenacion(
+        nombre: String
+    ): String {
+
+        val limpio = nombre.trim()
+
+        // Si no hay " - ", usamos el nombre completo.
+        // Estas listas se consideran normales solo si empiezan
+        // por Provincia-Ciudad.
+        val partes = limpio.split(" - ", limit = 2)
+
+        val comienzo = partes[0].trim()
+
+        val tieneProvinciaCiudad =
+            comienzo.contains("-") &&
+            comienzo.indexOf("-") > 0 &&
+            comienzo.indexOf("-") < comienzo.length - 1
+
+        return if (tieneProvinciaCiudad) {
+            comienzo.lowercase()
+        } else {
+            "zzzz-" + limpio.lowercase()
+        }
     }
     private fun nombreSeguro(
         nombre: String
