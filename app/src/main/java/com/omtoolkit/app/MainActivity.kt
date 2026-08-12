@@ -368,7 +368,46 @@ class MainActivity : Activity() {
 
                     mostrarLista(lista)
                 }
+                val guardarBackup =
+                    TextView(this)
 
+                guardarBackup.text =
+                    "\n   💾 GUARDAR BACKUP COMPLETO   \n"
+
+                guardarBackup.textSize = 19f
+                guardarBackup.gravity = Gravity.CENTER
+
+                guardarBackup.setPadding(
+                    20,
+                    25,
+                    20,
+                    25
+                )
+
+                guardarBackup.setOnClickListener {
+
+                    val intent =
+                        android.content.Intent(
+                            android.content.Intent.ACTION_CREATE_DOCUMENT
+                        )
+
+                    intent.type =
+                        "application/vnd.google-earth.kmz"
+
+                    intent.putExtra(
+                        android.content.Intent.EXTRA_TITLE,
+                        "OrganicMaps_limpio_ordenado.kmz"
+                    )
+
+                    startActivityForResult(
+                        intent,
+                        200
+                    )
+                }
+
+                listaContenedor.addView(
+                    guardarBackup
+                )
                 boton.text =
                     "📂 SELECCIONAR OTRO KMZ"
 
@@ -384,10 +423,278 @@ class MainActivity : Activity() {
         // GUARDAR LISTA
         // ============================================================
 
-        if (
+                if (
             requestCode == 200 &&
             resultCode == RESULT_OK
         ) {
+
+            val destino =
+                data?.data
+
+            if (destino == null) {
+
+                resultado.text =
+                    "❌ No se pudo seleccionar el archivo"
+
+                return
+            }
+
+            try {
+
+                val salida =
+                    contentResolver
+                        .openOutputStream(destino)
+
+                if (salida == null) {
+
+                    resultado.text =
+                        "❌ No se pudo crear el archivo"
+
+                    return
+                }
+
+                // ====================================================
+                // ORDEN DE LAS LISTAS
+                //
+                // Asociamos cada archivo KML con su posición
+                // en listasEncontradas, que ya está ordenada.
+                // ====================================================
+
+                val ordenArchivos =
+                    listasEncontradas
+                        .mapIndexed {
+                            indice,
+                            lista ->
+                            lista.archivoKml to indice
+                        }
+                        .toMap()
+
+                // ====================================================
+                // REORDENAR LOS NETWORKLINK DE doc.kml
+                // ====================================================
+
+                val entradaDoc =
+                    entradasOriginales
+                        .firstOrNull {
+                            it.nombre
+                                .lowercase() == "doc.kml"
+                        }
+
+                var docFinal = ""
+
+                if (entradaDoc != null) {
+
+                    val docOriginal =
+                        String(
+                            entradaDoc.datos,
+                            Charsets.UTF_8
+                        )
+
+                    val patronNetworkLink =
+                        Regex(
+                            "<NetworkLink\\b[\\s\\S]*?</NetworkLink>",
+                            RegexOption.IGNORE_CASE
+                        )
+
+                    val enlaces =
+                        patronNetworkLink
+                            .findAll(docOriginal)
+                            .map {
+                                it.value
+                            }
+                            .toList()
+
+                    val enlacesOrdenados =
+                        enlaces.sortedBy {
+
+                            val href =
+                                Regex(
+                                    "<href>([\\s\\S]*?)</href>",
+                                    RegexOption.IGNORE_CASE
+                                )
+                                    .find(it)
+                                    ?.groupValues
+                                    ?.get(1)
+                                    ?.trim()
+                                    ?: ""
+
+                            ordenArchivos[href]
+                                ?: Int.MAX_VALUE
+                        }
+
+                    if (enlaces.isNotEmpty()) {
+
+                        val primerEnlace =
+                            patronNetworkLink
+                                .find(docOriginal)!!
+
+                        val ultimoEnlace =
+                            patronNetworkLink
+                                .findAll(docOriginal)
+                                .last()
+
+                        val antes =
+                            docOriginal.substring(
+                                0,
+                                primerEnlace.range.first
+                            )
+
+                        val despues =
+                            docOriginal.substring(
+                                ultimoEnlace.range.last + 1
+                            )
+
+                        docFinal =
+                            antes +
+                            enlacesOrdenados.joinToString("\n") +
+                            despues
+
+                    } else {
+
+                        docFinal =
+                            docOriginal
+                    }
+
+                } else {
+
+                    resultado.text =
+                        "❌ No se encontró doc.kml"
+
+                    salida.close()
+
+                    return
+                }
+
+                // ====================================================
+                // CREAR ZIP COMPLETO
+                // ====================================================
+
+                val zipSalida =
+                    ZipOutputStream(salida)
+
+                var marcadoresFinales = 0
+                var trayectosFinales = 0
+
+                for (
+                    entradaOriginal
+                    in entradasOriginales
+                ) {
+
+                    val nombre =
+                        entradaOriginal.nombre
+
+                    val nuevaEntrada =
+                        ZipEntry(nombre)
+
+                    zipSalida.putNextEntry(
+                        nuevaEntrada
+                    )
+
+                    // =================================================
+                    // doc.kml
+                    // =================================================
+
+                    if (
+                        nombre
+                            .lowercase() == "doc.kml"
+                    ) {
+
+                        zipSalida.write(
+                            docFinal.toByteArray(
+                                Charsets.UTF_8
+                            )
+                        )
+
+                    } else {
+
+                        val lista =
+                            listasEncontradas
+                                .firstOrNull {
+                                    it.archivoKml == nombre
+                                }
+
+                        if (lista != null) {
+
+                            val contenidoOriginal =
+                                String(
+                                    entradaOriginal.datos,
+                                    Charsets.UTF_8
+                                )
+
+                            val contenidoLimpio =
+                                prepararKmlBackup(
+                                    contenidoOriginal
+                                )
+
+                            zipSalida.write(
+                                contenidoLimpio.toByteArray(
+                                    Charsets.UTF_8
+                                )
+                            )
+
+                            marcadoresFinales +=
+                                Regex(
+                                    "<Point\\b",
+                                    RegexOption.IGNORE_CASE
+                                )
+                                    .findAll(
+                                        contenidoLimpio
+                                    )
+                                    .count()
+
+                            trayectosFinales +=
+                                Regex(
+                                    "<gx:Track\\b",
+                                    RegexOption.IGNORE_CASE
+                                )
+                                    .findAll(
+                                        contenidoLimpio
+                                    )
+                                    .count()
+
+                        } else {
+
+                            // =========================================
+                            // Cualquier otro archivo se conserva tal cual
+                            // =========================================
+
+                            zipSalida.write(
+                                entradaOriginal.datos
+                            )
+                        }
+                    }
+
+                    zipSalida.closeEntry()
+                }
+
+                zipSalida.close()
+                salida.close()
+
+                // ====================================================
+                // RESULTADO
+                // ====================================================
+
+                resultado.text =
+                    "✅ BACKUP COMPLETO GUARDADO\n\n" +
+                    "📁 Listas: " +
+                    listasEncontradas.size +
+                    "\n\n" +
+                    "📍 Marcadores: " +
+                    marcadoresFinales +
+                    "\n" +
+                    "🚶 Trayectos: " +
+                    trayectosFinales +
+                    "\n\n" +
+                    "🧹 Duplicados eliminados\n" +
+                    "🔤 Listas ordenadas"
+
+            } catch (e: Exception) {
+
+                resultado.text =
+                    "❌ Error al guardar el backup:\n\n" +
+                    e.message
+            }
+        }
 
             val destino =
                 data?.data
@@ -776,7 +1083,38 @@ class MainActivity : Activity() {
         // ================================================================
     // CLAVE PARA ORDENAR LISTAS
     // ================================================================
+    // ================================================================
+    // PREPARAR CADA KML DEL BACKUP
+    // Conserva el KML original y limpia solo su Document
+    // ================================================================
 
+    private fun prepararKmlBackup(
+        contenidoOriginal: String
+    ): String {
+
+        val documento =
+            Regex(
+                "<Document\\b[\\s\\S]*?</Document>",
+                RegexOption.IGNORE_CASE
+            )
+                .find(contenidoOriginal)
+                ?: return contenidoOriginal
+
+        var documentoLimpio =
+            eliminarTracksDuplicados(
+                documento.value
+            )
+
+        documentoLimpio =
+            eliminarMarcadoresDuplicados(
+                documentoLimpio
+            )
+
+        return contenidoOriginal.replaceFirst(
+            documento.value,
+            documentoLimpio
+        )
+    }
     private fun claveOrdenacion(
         nombre: String
     ): String {
