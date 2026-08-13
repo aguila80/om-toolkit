@@ -25,66 +25,138 @@ class MainActivity : Activity() {
     )
 
     data class ListaKml(
-    val nombre: String,
-    val documento: String,
-    val marcadores: Int,
-    val trayectos: Int,
-    val archivoKml: String
-)
+        val nombre: String,
+        val documento: String,
+        val marcadores: Int,
+        val trayectos: Int,
+        val archivoKml: String
+    )
 
-    var entradasOriginales = mutableListOf<EntradaZip>()
+    var entradasOriginales =
+        mutableListOf<EntradaZip>()
 
-    var nombreKmlOriginal = "OrganicMaps.kml"
+    var listasEncontradas =
+        mutableListOf<ListaKml>()
 
-    var cabeceraKml = ""
-    var cierreKml = ""
-
-    var listasEncontradas = mutableListOf<ListaKml>()
-
-    var listaSeleccionada: ListaKml? = null
-
-    override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(
+        savedInstanceState: Bundle?
+    ) {
         super.onCreate(savedInstanceState)
 
-        val scroll = ScrollView(this)
+        val scroll =
+            ScrollView(this)
 
-        val pantalla = LinearLayout(this)
-        pantalla.orientation = LinearLayout.VERTICAL
-        pantalla.gravity = Gravity.CENTER
-        pantalla.setPadding(40, 40, 40, 40)
+        val pantalla =
+            LinearLayout(this)
 
-        val titulo = TextView(this)
-        titulo.text = "OM Toolkit"
-        titulo.textSize = 32f
-        titulo.setTypeface(null, Typeface.BOLD)
-        titulo.gravity = Gravity.CENTER
+        pantalla.orientation =
+            LinearLayout.VERTICAL
 
-        val version = TextView(this)
-        version.text = "VERSIÓN 1.0"
-        version.textSize = 24f
-        version.setTextColor(Color.rgb(0, 140, 70))
-        version.gravity = Gravity.CENTER
-        version.setPadding(0, 30, 0, 30)
+        pantalla.gravity =
+            Gravity.CENTER
 
-        val texto = TextView(this)
-        texto.text = "Separador de listas Organic Maps"
-        texto.textSize = 20f
-        texto.gravity = Gravity.CENTER
+        pantalla.setPadding(
+            40,
+            40,
+            40,
+            40
+        )
 
-        boton = TextView(this)
-        boton.text = "\n   📂  SELECCIONAR KMZ   \n"
-        boton.textSize = 20f
-        boton.gravity = Gravity.CENTER
-        boton.setPadding(20, 30, 20, 30)
+        val titulo =
+            TextView(this)
 
-        resultado = TextView(this)
-        resultado.text = ""
-        resultado.textSize = 18f
-        resultado.gravity = Gravity.CENTER
-        resultado.setPadding(10, 30, 10, 20)
+        titulo.text =
+            "OM Toolkit"
 
-        listaContenedor = LinearLayout(this)
-        listaContenedor.orientation = LinearLayout.VERTICAL
+        titulo.textSize =
+            32f
+
+        titulo.setTypeface(
+            null,
+            Typeface.BOLD
+        )
+
+        titulo.gravity =
+            Gravity.CENTER
+
+        val version =
+            TextView(this)
+
+        version.text =
+            "VERSIÓN 1.1"
+
+        version.textSize =
+            24f
+
+        version.setTextColor(
+            Color.rgb(0, 140, 70)
+        )
+
+        version.gravity =
+            Gravity.CENTER
+
+        version.setPadding(
+            0,
+            30,
+            0,
+            30
+        )
+
+        val texto =
+            TextView(this)
+
+        texto.text =
+            "Limpiador y ordenador de listas Organic Maps"
+
+        texto.textSize =
+            20f
+
+        texto.gravity =
+            Gravity.CENTER
+
+        boton =
+            TextView(this)
+
+        boton.text =
+            "\n   📂  SELECCIONAR BACKUP KMZ   \n"
+
+        boton.textSize =
+            20f
+
+        boton.gravity =
+            Gravity.CENTER
+
+        boton.setPadding(
+            20,
+            30,
+            20,
+            30
+        )
+
+        resultado =
+            TextView(this)
+
+        resultado.text =
+            ""
+
+        resultado.textSize =
+            18f
+
+        resultado.gravity =
+            Gravity.CENTER
+
+        resultado.setPadding(
+            10,
+            30,
+            10,
+            20
+        )
+
+        listaContenedor =
+            LinearLayout(this)
+
+        listaContenedor.orientation =
+            LinearLayout.VERTICAL
 
         pantalla.addView(titulo)
         pantalla.addView(version)
@@ -95,20 +167,27 @@ class MainActivity : Activity() {
 
         boton.setOnClickListener {
 
-            val intent = android.content.Intent(
-                android.content.Intent.ACTION_OPEN_DOCUMENT
-            )
+            val intent =
+                android.content.Intent(
+                    android.content.Intent.ACTION_OPEN_DOCUMENT
+                )
 
-            intent.type = "application/vnd.google-earth.kmz"
+            intent.type =
+                "application/vnd.google-earth.kmz"
 
             intent.addCategory(
                 android.content.Intent.CATEGORY_OPENABLE
             )
 
-            startActivityForResult(intent, 100)
+            startActivityForResult(
+                intent,
+                100
+            )
         }
 
-        scroll.addView(pantalla)
+        scroll.addView(
+            pantalla
+        )
 
         setContentView(scroll)
     }
@@ -118,6 +197,7 @@ class MainActivity : Activity() {
         resultCode: Int,
         data: android.content.Intent?
     ) {
+
         super.onActivityResult(
             requestCode,
             resultCode,
@@ -125,7 +205,7 @@ class MainActivity : Activity() {
         )
 
         // ============================================================
-        // ABRIR KMZ
+        // ABRIR BACKUP KMZ
         // ============================================================
 
         if (
@@ -133,12 +213,14 @@ class MainActivity : Activity() {
             resultCode == RESULT_OK
         ) {
 
-            val archivo = data?.data ?: return
+            val archivo =
+                data?.data ?: return
 
             try {
 
                 val entrada =
-                    contentResolver.openInputStream(archivo)
+                    contentResolver
+                        .openInputStream(archivo)
 
                 if (entrada == null) {
 
@@ -163,9 +245,9 @@ class MainActivity : Activity() {
                 var entradaZip =
                     zip.nextEntry
 
-                var contenidoKml = ""
-
-                while (entradaZip != null) {
+                while (
+                    entradaZip != null
+                ) {
 
                     val datos =
                         zip.readBytes()
@@ -177,69 +259,14 @@ class MainActivity : Activity() {
                         )
                     )
 
-                    if (
-                        entradaZip.name
-                            .lowercase()
-                            .endsWith(".kml")
-                    ) {
-
-                        nombreKmlOriginal =
-                            entradaZip.name
-
-                        contenidoKml =
-                            String(
-                                datos,
-                                Charsets.UTF_8
-                            )
-                    }
-
                     entradaZip =
                         zip.nextEntry
                 }
 
                 zip.close()
 
-                if (contenidoKml.isEmpty()) {
-
-                    resultado.text =
-                        "❌ No se encontró ningún KML"
-
-                    return
-                }
-
                 // ====================================================
-                // CONSERVAR EXACTAMENTE LA CABECERA DEL KML
-                // ====================================================
-
-                val kmlInicio =
-                    Regex(
-                        "<kml\\b[^>]*>",
-                        RegexOption.IGNORE_CASE
-                    )
-                        .find(contenidoKml)
-
-                if (kmlInicio == null) {
-
-                    resultado.text =
-                        "❌ KML no válido"
-
-                    return
-                }
-
-                cabeceraKml =
-                    contenidoKml.substring(
-                        0,
-                        kmlInicio.range.last + 1
-                    )
-
-                cierreKml = "</kml>"
-
-                // ====================================================
-                // EXTRAER TODAS LAS LISTAS DEL KMZ
-                //
-                // Organic Maps puede guardar:
-                // 1. Una lista directamente en un KML
-                // 2. Un backup completo con muchos KML dentro de /files/
+                // BUSCAR TODAS LAS LISTAS KML
                 // ====================================================
 
                 listasEncontradas.clear()
@@ -247,22 +274,29 @@ class MainActivity : Activity() {
                 val archivosKml =
                     entradasOriginales
                         .filter {
-                            it.nombre
-                                .lowercase()
-                                .endsWith(".kml") &&
-                            it.nombre
-                                .lowercase() != "doc.kml"
+
+                            val nombre =
+                                it.nombre
+                                    .lowercase()
+
+                            nombre.endsWith(".kml") &&
+                            nombre != "doc.kml"
                         }
 
-                if (archivosKml.isEmpty()) {
+                if (
+                    archivosKml.isEmpty()
+                ) {
 
                     resultado.text =
-                        "❌ No se encontraron listas"
+                        "❌ No se encontraron listas KML"
 
                     return
                 }
 
-                for (archivoKml in archivosKml) {
+                for (
+                    archivoKml
+                    in archivosKml
+                ) {
 
                     val contenido =
                         String(
@@ -280,7 +314,9 @@ class MainActivity : Activity() {
                             )
                             ?.value
 
-                    if (documento == null) {
+                    if (
+                        documento == null
+                    ) {
                         continue
                     }
 
@@ -293,7 +329,8 @@ class MainActivity : Activity() {
                                 documento
                             )
                             .map {
-                                it.groupValues[1].trim()
+                                it.groupValues[1]
+                                    .trim()
                             }
                             .toList()
 
@@ -334,7 +371,9 @@ class MainActivity : Activity() {
                     )
                 }
 
-                if (listasEncontradas.isEmpty()) {
+                if (
+                    listasEncontradas.isEmpty()
+                ) {
 
                     resultado.text =
                         "❌ No se encontraron listas"
@@ -343,36 +382,108 @@ class MainActivity : Activity() {
                 }
 
                 // ====================================================
-                // ORDEN ALFABÉTICO
+                // ORDENAR LISTAS
+                //
+                // Primero:
+                // Provincia-Ciudad
+                //
+                // Después:
+                // todo lo demás
                 // ====================================================
 
                 listasEncontradas =
                     listasEncontradas
-                        .sortedBy {
-                            claveOrdenacion(it.nombre)
-                        }
+                        .sortedWith(
+                            compareBy(
+                                { claveGrupo(it.nombre) },
+                                { claveOrdenacion(it.nombre) }
+                            )
+                        )
                         .toMutableList()
+
                 // ====================================================
-                // MOSTRAR LISTAS
+                // MOSTRAR RESULTADO
                 // ====================================================
 
-                listaContenedor.removeAllViews()
+                listaContenedor
+                    .removeAllViews()
 
                 resultado.text =
-                    "✅ KMZ leído correctamente\n\n" +
+                    "✅ BACKUP LEÍDO CORRECTAMENTE\n\n" +
                     "📁 LISTAS ENCONTRADAS: " +
                     listasEncontradas.size +
-                    "\n\nSelecciona la lista que quieres guardar."
+                    "\n\n" +
+                    "Las listas Provincia-Ciudad " +
+                    "quedarán ordenadas al guardar."
 
-                for (lista in listasEncontradas) {
+                // ====================================================
+                // BOTÓN ÚNICO DE GUARDADO
+                // ====================================================
 
-                    mostrarLista(lista)
+                val guardarBackup =
+                    TextView(this)
+
+                guardarBackup.text =
+                    "\n   💾 GUARDAR BACKUP COMPLETO   \n"
+
+                guardarBackup.textSize =
+                    20f
+
+                guardarBackup.gravity =
+                    Gravity.CENTER
+
+                guardarBackup.setPadding(
+                    20,
+                    30,
+                    20,
+                    30
+                )
+
+                guardarBackup.setOnClickListener {
+
+                    val intent =
+                        android.content.Intent(
+                            android.content.Intent.ACTION_CREATE_DOCUMENT
+                        )
+
+                    intent.type =
+                        "application/vnd.google-earth.kmz"
+
+                    intent.putExtra(
+                        android.content.Intent.EXTRA_TITLE,
+                        "OrganicMaps_limpio_ordenado.kmz"
+                    )
+
+                    startActivityForResult(
+                        intent,
+                        200
+                    )
+                }
+
+                listaContenedor.addView(
+                    guardarBackup
+                )
+
+                // ====================================================
+                // MOSTRAR LAS LISTAS SOLO COMO INFORMACIÓN
+                // ====================================================
+
+                for (
+                    lista
+                    in listasEncontradas
+                ) {
+
+                    mostrarLista(
+                        lista
+                    )
                 }
 
                 boton.text =
-                    "📂 SELECCIONAR OTRO KMZ"
+                    "📂 SELECCIONAR OTRO BACKUP KMZ"
 
-            } catch (e: Exception) {
+            } catch (
+                e: Exception
+            ) {
 
                 resultado.text =
                     "❌ Error al analizar el KMZ:\n\n" +
@@ -381,7 +492,7 @@ class MainActivity : Activity() {
         }
 
         // ============================================================
-        // GUARDAR LISTA
+        // GUARDAR BACKUP COMPLETO
         // ============================================================
 
         if (
@@ -392,16 +503,12 @@ class MainActivity : Activity() {
             val destino =
                 data?.data
 
-            val lista =
-                listaSeleccionada
-
             if (
-                destino == null ||
-                lista == null
+                destino == null
             ) {
 
                 resultado.text =
-                    "❌ No hay ninguna lista seleccionada"
+                    "❌ No se pudo seleccionar el destino"
 
                 return
             }
@@ -412,7 +519,9 @@ class MainActivity : Activity() {
                     contentResolver
                         .openOutputStream(destino)
 
-                if (salida == null) {
+                if (
+                    salida == null
+                ) {
 
                     resultado.text =
                         "❌ No se pudo crear el archivo"
@@ -421,141 +530,452 @@ class MainActivity : Activity() {
                 }
 
                 // ====================================================
-                // ELIMINAR gx:Track DUPLICADOS IDÉNTICOS
+                // ORDEN DE LOS ARCHIVOS KML
                 // ====================================================
 
-                val documentoLimpio =
-    eliminarMarcadoresDuplicados(
-        eliminarTracksDuplicados(
-            lista.documento
-        )
-    )
+                val ordenArchivos =
+                    listasEncontradas
+                        .mapIndexed {
+                            indice,
+                            lista ->
+                            lista.archivoKml to indice
+                        }
+                        .toMap()
 
                 // ====================================================
-                // CONSTRUIR KML FINAL
-                //
-                // SOLO:
-                // cabecera ORIGINAL
-                // +
-                // Document ORIGINAL
-                // +
-                // cierre ORIGINAL
-                //
-                // No creamos un Document nuevo.
+                // BUSCAR doc.kml
                 // ====================================================
 
-                val kmlFinal =
-                    cabeceraKml +
-                    "\n" +
-                    documentoLimpio +
-                    "\n" +
-                    cierreKml +
-                    "\n"
+                val entradaDoc =
+                    entradasOriginales
+                        .firstOrNull {
+
+                            it.nombre
+                                .substringAfterLast("/")
+                                .equals(
+                                    "doc.kml",
+                                    ignoreCase = true
+                                )
+                        }
+
+                var docFinal =
+                    ""
+
+                if (
+                    entradaDoc != null
+                ) {
+
+                    val docOriginal =
+                        String(
+                            entradaDoc.datos,
+                            Charsets.UTF_8
+                        )
+
+                    // =================================================
+                    // LOCALIZAR TODOS LOS NetworkLink
+                    // =================================================
+
+                    val patronNetworkLink =
+                        Regex(
+                            "<NetworkLink\\b[\\s\\S]*?</NetworkLink>",
+                            RegexOption.IGNORE_CASE
+                        )
+
+                    val enlaces =
+                        patronNetworkLink
+                            .findAll(
+                                docOriginal
+                            )
+                            .map {
+                                it.value
+                            }
+                            .toList()
+
+                    if (
+                        enlaces.isEmpty()
+                    ) {
+
+                        docFinal =
+                            docOriginal
+
+                    } else {
+
+                        // =============================================
+                        // Ordenar los NetworkLink según las listas
+                        // =============================================
+
+                        val enlacesOrdenados =
+                            enlaces.sortedBy {
+
+                                val href =
+                                    Regex(
+                                        "<href>([\\s\\S]*?)</href>",
+                                        RegexOption.IGNORE_CASE
+                                    )
+                                        .find(it)
+                                        ?.groupValues
+                                        ?.get(1)
+                                        ?.trim()
+                                        ?: ""
+
+                                val hrefLimpio =
+                                    href
+                                        .substringAfterLast(
+                                            "/"
+                                        )
+
+                                ordenArchivos[
+                                    href
+                                ]
+                                    ?: ordenArchivos[
+                                        hrefLimpio
+                                    ]
+                                    ?: Int.MAX_VALUE
+                            }
+
+                        val primerEnlace =
+                            patronNetworkLink
+                                .find(
+                                    docOriginal
+                                )
+
+                        val ultimaCoincidencia =
+                            patronNetworkLink
+                                .findAll(
+                                    docOriginal
+                                )
+                                .last()
+
+                        if (
+                            primerEnlace != null
+                        ) {
+
+                            val antes =
+                                docOriginal.substring(
+                                    0,
+                                    primerEnlace.range.first
+                                )
+
+                            val despues =
+                                docOriginal.substring(
+                                    ultimaCoincidencia.range.last + 1
+                                )
+
+                            docFinal =
+                                antes +
+                                enlacesOrdenados
+                                    .joinToString("\n") +
+                                despues
+
+                        } else {
+
+                            docFinal =
+                                docOriginal
+                        }
+                    }
+
+                } else {
+
+                    // =================================================
+                    // Si no existe doc.kml, no lo inventamos.
+                    // =================================================
+
+                    docFinal =
+                        ""
+                }
 
                 // ====================================================
-                // CREAR ZIP
-                //
-                // Conservamos todos los archivos originales
-                // y sustituimos únicamente el KML.
+                // CREAR EL NUEVO KMZ
                 // ====================================================
 
                 val zipSalida =
-                    ZipOutputStream(salida)
+                    ZipOutputStream(
+                        salida
+                    )
+
+                var marcadoresAntes =
+                    0
+
+                var marcadoresDespues =
+                    0
+
+                var trayectosAntes =
+                    0
+
+                var trayectosDespues =
+                    0
 
                 for (
                     entradaOriginal
                     in entradasOriginales
                 ) {
 
-                    val esKml =
+                    val nombre =
                         entradaOriginal.nombre
-                            .lowercase()
-                            .endsWith(".kml")
 
-                    if (esKml) {
+                    val nombreFinal =
+                        nombre
+                            .substringAfterLast("/")
 
-                        val nuevaEntrada =
-                            ZipEntry(
-                                entradaOriginal.nombre
-                            )
-
-                        zipSalida.putNextEntry(
-                            nuevaEntrada
+                    val esDoc =
+                        nombreFinal.equals(
+                            "doc.kml",
+                            ignoreCase = true
                         )
 
+                    val esListaKml =
+                        listasEncontradas
+                            .any {
+                                it.archivoKml == nombre
+                            }
+
+                    val nuevaEntrada =
+                        ZipEntry(
+                            nombre
+                        )
+
+                    zipSalida.putNextEntry(
+                        nuevaEntrada
+                    )
+
+                    if (
+                        esDoc &&
+                        docFinal.isNotEmpty()
+                    ) {
+
+                        // =============================================
+                        // doc.kml ordenado
+                        // =============================================
+
                         zipSalida.write(
-                            kmlFinal.toByteArray(
+                            docFinal.toByteArray(
                                 Charsets.UTF_8
                             )
                         )
 
-                        zipSalida.closeEntry()
+                    } else if (
+                        esListaKml
+                    ) {
+
+                        // =============================================
+                        // KML DE UNA LISTA
+                        // =============================================
+
+                        val contenidoOriginal =
+                            String(
+                                entradaOriginal.datos,
+                                Charsets.UTF_8
+                            )
+
+                        val lista =
+                            listasEncontradas
+                                .first {
+                                    it.archivoKml == nombre
+                                }
+
+                        val documentoOriginal =
+                            Regex(
+                                "<Document\\b[\\s\\S]*?</Document>",
+                                RegexOption.IGNORE_CASE
+                            )
+                                .find(
+                                    contenidoOriginal
+                                )
+                                ?.value
+
+                        if (
+                            documentoOriginal != null
+                        ) {
+
+                            val marcadoresOriginales =
+                                Regex(
+                                    "<Point\\b",
+                                    RegexOption.IGNORE_CASE
+                                )
+                                    .findAll(
+                                        documentoOriginal
+                                    )
+                                    .count()
+
+                            val trayectosOriginales =
+                                Regex(
+                                    "<gx:Track\\b",
+                                    RegexOption.IGNORE_CASE
+                                )
+                                    .findAll(
+                                        documentoOriginal
+                                    )
+                                    .count()
+
+                            marcadoresAntes +=
+                                marcadoresOriginales
+
+                            trayectosAntes +=
+                                trayectosOriginales
+
+                            // =========================================
+                            // LIMPIAR DUPLICADOS
+                            // =========================================
+
+                            val documentoLimpio =
+                                eliminarMarcadoresDuplicados(
+                                    eliminarTracksDuplicados(
+                                        documentoOriginal
+                                    )
+                                )
+
+                            val marcadoresLimpios =
+                                Regex(
+                                    "<Point\\b",
+                                    RegexOption.IGNORE_CASE
+                                )
+                                    .findAll(
+                                        documentoLimpio
+                                    )
+                                    .count()
+
+                            val trayectosLimpios =
+                                Regex(
+                                    "<gx:Track\\b",
+                                    RegexOption.IGNORE_CASE
+                                )
+                                    .findAll(
+                                        documentoLimpio
+                                    )
+                                    .count()
+
+                            marcadoresDespues +=
+                                marcadoresLimpios
+
+                            trayectosDespues +=
+                                trayectosLimpios
+
+                            // =========================================
+                            // CONSERVAR EL KML ORIGINAL
+                            // Y SUSTITUIR SOLO Document
+                            // =========================================
+
+                            val inicioDocumento =
+                                Regex(
+                                    "<Document\\b[\\s\\S]*?</Document>",
+                                    RegexOption.IGNORE_CASE
+                                )
+                                    .find(
+                                        contenidoOriginal
+                                    )
+
+                            if (
+                                inicioDocumento != null
+                            ) {
+
+                                val kmlFinal =
+                                    contenidoOriginal.substring(
+                                        0,
+                                        inicioDocumento.range.first
+                                    ) +
+                                    documentoLimpio +
+                                    contenidoOriginal.substring(
+                                        inicioDocumento.range.last + 1
+                                    )
+
+                                zipSalida.write(
+                                    kmlFinal.toByteArray(
+                                        Charsets.UTF_8
+                                    )
+                                )
+
+                            } else {
+
+                                zipSalida.write(
+                                    entradaOriginal.datos
+                                )
+                            }
+
+                        } else {
+
+                            zipSalida.write(
+                                entradaOriginal.datos
+                            )
+                        }
 
                     } else {
 
-                        val nuevaEntrada =
-                            ZipEntry(
-                                entradaOriginal.nombre
-                            )
-
-                        zipSalida.putNextEntry(
-                            nuevaEntrada
-                        )
+                        // =============================================
+                        // CUALQUIER OTRO ARCHIVO:
+                        // CONSERVAR EXACTAMENTE COMO ESTABA
+                        // =============================================
 
                         zipSalida.write(
                             entradaOriginal.datos
                         )
-
-                        zipSalida.closeEntry()
                     }
+
+                    zipSalida.closeEntry()
                 }
 
                 zipSalida.close()
                 salida.close()
 
                 // ====================================================
-                // CONTAR LO QUE REALMENTE HEMOS GUARDADO
+                // RESULTADO FINAL
                 // ====================================================
 
-                val puntosFinales =
-                    Regex(
-                        "<Point\\b",
-                        RegexOption.IGNORE_CASE
-                    )
-                        .findAll(
-                            documentoLimpio
-                        )
-                        .count()
+                val listasNormales =
+                    listasEncontradas
+                        .count {
+                            claveGrupo(
+                                it.nombre
+                            ) == 0
+                        }
 
-                val tracksFinales =
-                    Regex(
-                        "<gx:Track\\b",
-                        RegexOption.IGNORE_CASE
-                    )
-                        .findAll(
-                            documentoLimpio
-                        )
-                        .count()
+                val listasOtros =
+                    listasEncontradas
+                        .count {
+                            claveGrupo(
+                                it.nombre
+                            ) == 1
+                        }
 
-                resultado.text =
-                    "✅ KMZ GUARDADO\n\n" +
-                    "📁 ${lista.nombre}\n\n" +
-                    "📍 Marcadores: $puntosFinales\n" +
-                    "🚶 Trayectos: $tracksFinales\n\n" +
-                    "La estructura original del KML " +
-                    "se ha conservado."
+                val eliminadosMarcadores =
+                    marcadoresAntes -
+                    marcadoresDespues
 
-            } catch (e: Exception) {
+                val eliminadosTrayectos =
+                    trayectosAntes -
+                    trayectosDespues
 
                 resultado.text =
-                    "❌ Error al guardar el KMZ:\n\n" +
+                    "✅ BACKUP COMPLETO GUARDADO\n\n" +
+                    "📁 Listas: " +
+                    listasEncontradas.size +
+                    "\n" +
+                    "🔤 Provincia-Ciudad: " +
+                    listasNormales +
+                    "\n" +
+                    "📦 Otras: " +
+                    listasOtros +
+                    "\n\n" +
+                    "📍 Marcadores eliminados: " +
+                    eliminadosMarcadores +
+                    "\n" +
+                    "🚶 Trayectos eliminados: " +
+                    eliminadosTrayectos +
+                    "\n\n" +
+                    "💾 OrganicMaps_limpio_ordenado.kmz"
+
+            } catch (
+                e: Exception
+            ) {
+
+                resultado.text =
+                    "❌ Error al guardar el backup:\n\n" +
                     e.message
             }
         }
     }
 
     // ================================================================
-    // MOSTRAR LISTA
+    // MOSTRAR UNA LISTA
     // ================================================================
 
     private fun mostrarLista(
@@ -577,7 +997,8 @@ class MainActivity : Activity() {
         nombre.text =
             "📁 ${lista.nombre}"
 
-        nombre.textSize = 20f
+        nombre.textSize =
+            20f
 
         nombre.setTypeface(
             null,
@@ -601,58 +1022,11 @@ class MainActivity : Activity() {
             "📍 Marcadores: ${lista.marcadores}\n" +
             "🚶 Trayectos: ${lista.trayectos}"
 
-        datos.textSize = 17f
+        datos.textSize =
+            17f
+
         datos.gravity =
             Gravity.CENTER
-
-        val guardar =
-            TextView(this)
-
-        guardar.text =
-            "\n   💾 GUARDAR ESTA LISTA   \n"
-
-        guardar.textSize = 19f
-        guardar.gravity =
-            Gravity.CENTER
-
-        guardar.setPadding(
-            20,
-            20,
-            20,
-            20
-        )
-
-        guardar.setOnClickListener {
-
-            listaSeleccionada =
-                lista
-
-            resultado.text =
-                "📌 LISTA SELECCIONADA\n\n" +
-                "📁 ${lista.nombre}\n" +
-                "📍 ${lista.marcadores} marcadores\n" +
-                "🚶 ${lista.trayectos} trayectos"
-
-            val intent =
-                android.content.Intent(
-                    android.content.Intent.ACTION_CREATE_DOCUMENT
-                )
-
-            intent.type =
-                "application/vnd.google-earth.kmz"
-
-            intent.putExtra(
-                android.content.Intent.EXTRA_TITLE,
-                nombreSeguro(
-                    lista.nombre
-                ) + ".kmz"
-            )
-
-            startActivityForResult(
-                intent,
-                200
-            )
-        }
 
         listaContenedor.addView(
             separador
@@ -665,10 +1039,87 @@ class MainActivity : Activity() {
         listaContenedor.addView(
             datos
         )
+    }
 
-        listaContenedor.addView(
-            guardar
-        )
+    // ================================================================
+    // GRUPO DE ORDENACIÓN
+    //
+    // 0 = empieza por Provincia-Ciudad
+    // 1 = cualquier otro nombre
+    // ================================================================
+
+    private fun claveGrupo(
+        nombre: String
+    ): Int {
+
+        val limpio =
+            nombre.trim()
+
+        val patron =
+            Regex(
+                "^\\s*[^\\-\\s]+\\s*-\\s*[^\\s-]+"
+            )
+
+        return if (
+            patron.containsMatchIn(
+                limpio
+            )
+        ) {
+            0
+        } else {
+            1
+        }
+    }
+
+    // ================================================================
+    // CLAVE DE ORDENACIÓN
+    //
+    // Alicante-Altea Wikiloc...
+    //         ↓
+    // alicante-altea
+    //
+    // Lo que venga después NO influye.
+    // ================================================================
+
+    private fun claveOrdenacion(
+        nombre: String
+    ): String {
+
+        val limpio =
+            nombre.trim()
+
+        val patron =
+            Regex(
+                "^\\s*([^\\-\\s]+)\\s*-\\s*([^\\s-]+)"
+            )
+
+        val coincidencia =
+            patron.find(
+                limpio
+            )
+
+        return if (
+            coincidencia != null
+        ) {
+
+            val provincia =
+                coincidencia
+                    .groupValues[1]
+                    .trim()
+                    .lowercase()
+
+            val ciudad =
+                coincidencia
+                    .groupValues[2]
+                    .trim()
+                    .lowercase()
+
+            "$provincia-$ciudad"
+
+        } else {
+
+            limpio.lowercase()
+        }
     }
 
     // ================================================================
@@ -684,13 +1135,18 @@ class MainActivity : Activity() {
                 "<gx:Track\\b[\\s\\S]*?</gx:Track>",
                 RegexOption.IGNORE_CASE
             )
-                .findAll(documento)
+                .findAll(
+                    documento
+                )
                 .map {
                     it.value
                 }
                 .toList()
 
-        if (tracks.size <= 1) {
+        if (
+            tracks.size <= 1
+        ) {
+
             return documento
         }
 
@@ -700,32 +1156,36 @@ class MainActivity : Activity() {
         var resultadoDocumento =
             documento
 
-        for (track in tracks) {
+        for (
+            track
+            in tracks
+        ) {
 
-            if (vistos.contains(track)) {
+            if (
+                vistos.contains(
+                    track
+                )
+            ) {
 
                 resultadoDocumento =
                     resultadoDocumento.replaceFirst(
-                        track,
+                        Regex.escape(
+                            track
+                        ).toRegex(),
                         ""
                     )
 
             } else {
 
-                vistos.add(track)
+                vistos.add(
+                    track
+                )
             }
         }
 
         return resultadoDocumento
     }
-// ================================================================
-// LIMPIAR MARCADORES DUPLICADOS DENTRO DE CADA LISTA
-// ================================================================
 
-
-    // ================================================================
-    // LIMPIAR NOMBRE DE ARCHIVO
-    // ================================================================
     // ================================================================
     // ELIMINAR SOLO MARCADORES COMPLETAMENTE IDÉNTICOS
     // ================================================================
@@ -739,13 +1199,18 @@ class MainActivity : Activity() {
                 "<Placemark\\b[\\s\\S]*?</Placemark>",
                 RegexOption.IGNORE_CASE
             )
-                .findAll(documento)
+                .findAll(
+                    documento
+                )
                 .map {
                     it.value
                 }
                 .toList()
 
-        if (placemarks.size <= 1) {
+        if (
+            placemarks.size <= 1
+        ) {
+
             return documento
         }
 
@@ -755,66 +1220,33 @@ class MainActivity : Activity() {
         var resultadoDocumento =
             documento
 
-        for (placemark in placemarks) {
+        for (
+            placemark
+            in placemarks
+        ) {
 
-            if (vistos.contains(placemark)) {
+            if (
+                vistos.contains(
+                    placemark
+                )
+            ) {
 
                 resultadoDocumento =
                     resultadoDocumento.replaceFirst(
-                        Regex.escape(placemark).toRegex(),
+                        Regex.escape(
+                            placemark
+                        ).toRegex(),
                         ""
                     )
 
             } else {
 
-                vistos.add(placemark)
+                vistos.add(
+                    placemark
+                )
             }
         }
 
         return resultadoDocumento
-    }
-        // ================================================================
-    // CLAVE PARA ORDENAR LISTAS
-    // ================================================================
-
-    private fun claveOrdenacion(
-        nombre: String
-    ): String {
-
-        val limpio = nombre.trim()
-
-        // Si no hay " - ", usamos el nombre completo.
-        // Estas listas se consideran normales solo si empiezan
-        // por Provincia-Ciudad.
-        val partes = limpio.split(" - ", limit = 2)
-
-        val comienzo = partes[0].trim()
-
-        val tieneProvinciaCiudad =
-            comienzo.contains("-") &&
-            comienzo.indexOf("-") > 0 &&
-            comienzo.indexOf("-") < comienzo.length - 1
-
-        return if (tieneProvinciaCiudad) {
-            comienzo.lowercase()
-        } else {
-            "zzzz-" + limpio.lowercase()
-        }
-    }
-    private fun nombreSeguro(
-        nombre: String
-    ): String {
-
-        return nombre
-            .replace("/", "-")
-            .replace("\\", "-")
-            .replace(":", "-")
-            .replace("*", "-")
-            .replace("?", "")
-            .replace("\"", "")
-            .replace("<", "")
-            .replace(">", "")
-            .replace("|", "-")
-            .trim()
     }
 }
