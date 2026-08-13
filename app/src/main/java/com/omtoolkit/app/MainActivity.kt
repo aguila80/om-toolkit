@@ -83,7 +83,7 @@ class MainActivity : Activity() {
             TextView(this)
 
         version.text =
-            "VERSIÓN 1.2"
+            "VERSIÓN 1.3"
 
         version.textSize =
             24f
@@ -238,16 +238,12 @@ class MainActivity : Activity() {
                 entradasOriginales.clear()
 
                 // ====================================================
-                // LEER EL ZIP Y ELIMINAR DUPLICADOS AQUÍ
+                // LEER ZIP
                 //
-                // Si el mismo nombre aparece otra vez:
-                //
-                // 1. Si el contenido es idéntico:
-                //    ignoramos la segunda copia.
-                //
-                // 2. Si el contenido es diferente:
-                //    conservamos ambas y damos a la segunda
-                //    un nombre _DUPLICADO_2.
+                // Los nombres duplicados se detectan al leer.
+                // Si son idénticos se conserva solo una copia.
+                // Si son diferentes se conserva la segunda con
+                // un nombre seguro.
                 // ====================================================
 
                 val nombresLeidos =
@@ -289,20 +285,12 @@ class MainActivity : Activity() {
                             )
                         ) {
 
-                            // ========================================
-                            // DUPLICADO IDÉNTICO
-                            // ========================================
-
                             entradaZip =
                                 zip.nextEntry
 
                             continue
 
                         } else {
-
-                            // ========================================
-                            // MISMO NOMBRE, CONTENIDO DIFERENTE
-                            // ========================================
 
                             nombreFinal =
                                 nombreDuplicadoSeguro(
@@ -475,10 +463,6 @@ class MainActivity : Activity() {
                     "Las listas Provincia-Ciudad " +
                     "quedarán ordenadas al guardar."
 
-                // ====================================================
-                // BOTÓN DE GUARDADO
-                // ====================================================
-
                 val guardarBackup =
                     TextView(this)
 
@@ -589,17 +573,49 @@ class MainActivity : Activity() {
                 }
 
                 // ====================================================
-                // ORDEN DE LOS ARCHIVOS KML
+                // MAPA:
+                // nombre ORIGINAL -> nombre FINAL
+                //
+                // Esto es fundamental cuando existe un duplicado
+                // con contenido diferente.
                 // ====================================================
 
-                val ordenArchivos =
-                    listasEncontradas
-                        .mapIndexed {
-                            indice,
-                            lista ->
-                            lista.archivoKml to indice
-                        }
-                        .toMap()
+                val mapaNombres =
+                    mutableMapOf<String, String>()
+
+                for (
+                    entrada
+                    in entradasOriginales
+                ) {
+
+                    val nombre =
+                        entrada.nombre
+
+                    val originalBase =
+                        nombre
+                            .substringAfterLast(
+                                "/"
+                            )
+
+                    val posibleOriginal =
+                        nombre.replace(
+                            Regex(
+                                "_DUPLICADO_\\d+(?=\\.[^.]+$)"
+                            ),
+                            ""
+                        )
+
+                    mapaNombres[
+                        originalBase
+                    ] =
+                        nombre
+
+                    mapaNombres[
+                        posibleOriginal
+                            .substringAfterLast("/")
+                    ] =
+                        nombre
+                }
 
                 // ====================================================
                 // BUSCAR doc.kml
@@ -630,6 +646,10 @@ class MainActivity : Activity() {
                             Charsets.UTF_8
                         )
 
+                    // =================================================
+                    // ORDENAR LOS NetworkLink SEGÚN LAS LISTAS
+                    // =================================================
+
                     val patronNetworkLink =
                         Regex(
                             "<NetworkLink\\b[\\s\\S]*?</NetworkLink>",
@@ -646,6 +666,93 @@ class MainActivity : Activity() {
                             }
                             .toList()
 
+                    val ordenArchivos =
+                        listasEncontradas
+                            .mapIndexed {
+                                indice,
+                                lista ->
+                                lista.archivoKml to indice
+                            }
+                            .toMap()
+
+                    val enlacesOrdenados =
+                        enlaces.sortedBy {
+
+                            val href =
+                                Regex(
+                                    "<href>([\\s\\S]*?)</href>",
+                                    RegexOption.IGNORE_CASE
+                                )
+                                    .find(it)
+                                    ?.groupValues
+                                    ?.get(1)
+                                    ?.trim()
+                                    ?: ""
+
+                            val hrefBase =
+                                href.substringAfterLast(
+                                    "/"
+                                )
+
+                            val nombreCorregido =
+                                mapaNombres[
+                                    hrefBase
+                                ] ?: hrefBase
+
+                            ordenArchivos[
+                                nombreCorregido
+                            ]
+                                ?: ordenArchivos[
+                                    href
+                                ]
+                                ?: Int.MAX_VALUE
+                        }
+
+                    // =================================================
+                    // ACTUALIZAR href SI EL ARCHIVO FUE RENOMBRADO
+                    // =================================================
+
+                    val enlacesCorregidos =
+                        enlacesOrdenados
+                            .map { enlace ->
+
+                                enlace.replace(
+                                    Regex(
+                                        "<href>([\\s\\S]*?)</href>",
+                                        RegexOption.IGNORE_CASE
+                                    )
+                                ) { coincidencia ->
+
+                                    val hrefOriginal =
+                                        coincidencia
+                                            .groupValues[1]
+                                            .trim()
+
+                                    val base =
+                                        hrefOriginal
+                                            .substringAfterLast(
+                                                "/"
+                                            )
+
+                                    val nuevoNombre =
+                                        mapaNombres[
+                                            base
+                                        ]
+
+                                    if (
+                                        nuevoNombre != null &&
+                                        nuevoNombre != base
+                                    ) {
+
+                                        "<href>$nuevoNombre</href>"
+
+                                    } else {
+
+                                        coincidencia.value
+                                    }
+                                }
+                            }
+
                     if (
                         enlaces.isEmpty()
                     ) {
@@ -655,42 +762,13 @@ class MainActivity : Activity() {
 
                     } else {
 
-                        val enlacesOrdenados =
-                            enlaces.sortedBy {
-
-                                val href =
-                                    Regex(
-                                        "<href>([\\s\\S]*?)</href>",
-                                        RegexOption.IGNORE_CASE
-                                    )
-                                        .find(it)
-                                        ?.groupValues
-                                        ?.get(1)
-                                        ?.trim()
-                                        ?: ""
-
-                                val hrefLimpio =
-                                    href
-                                        .substringAfterLast(
-                                            "/"
-                                        )
-
-                                ordenArchivos[
-                                    href
-                                ]
-                                    ?: ordenArchivos[
-                                        hrefLimpio
-                                    ]
-                                    ?: Int.MAX_VALUE
-                            }
-
-                        val primerEnlace =
+                        val primero =
                             patronNetworkLink
                                 .find(
                                     docOriginal
                                 )
 
-                        val ultimaCoincidencia =
+                        val ultimo =
                             patronNetworkLink
                                 .findAll(
                                     docOriginal
@@ -698,23 +776,23 @@ class MainActivity : Activity() {
                                 .last()
 
                         if (
-                            primerEnlace != null
+                            primero != null
                         ) {
 
                             val antes =
                                 docOriginal.substring(
                                     0,
-                                    primerEnlace.range.first
+                                    primero.range.first
                                 )
 
                             val despues =
                                 docOriginal.substring(
-                                    ultimaCoincidencia.range.last + 1
+                                    ultimo.range.last + 1
                                 )
 
                             docFinal =
                                 antes +
-                                enlacesOrdenados
+                                enlacesCorregidos
                                     .joinToString("\n") +
                                 despues
 
@@ -732,11 +810,7 @@ class MainActivity : Activity() {
                 }
 
                 // ====================================================
-                // CREAR EL NUEVO KMZ
-                //
-                // IMPORTANTE:
-                // Aquí ya no necesitamos ningún control de duplicados.
-                // Los nombres ya son únicos desde la lectura.
+                // CREAR NUEVO KMZ
                 // ====================================================
 
                 val zipSalida =
@@ -764,19 +838,19 @@ class MainActivity : Activity() {
                     val nombreOriginal =
                         entradaOriginal.nombre
 
-                    val nombreFinal =
+                    val nombreBase =
                         nombreOriginal
                             .substringAfterLast("/")
 
                     val esDoc =
-                        nombreFinal.equals(
+                        nombreBase.equals(
                             "doc.kml",
                             ignoreCase = true
                         )
 
-                    val esListaKml =
+                    val lista =
                         listasEncontradas
-                            .any {
+                            .firstOrNull {
                                 it.archivoKml ==
                                     nombreOriginal
                             }
@@ -802,7 +876,7 @@ class MainActivity : Activity() {
                         )
 
                     } else if (
-                        esListaKml
+                        lista != null
                     ) {
 
                         val contenidoOriginal =
@@ -811,18 +885,80 @@ class MainActivity : Activity() {
                                 Charsets.UTF_8
                             )
 
-                        val lista =
-                            listasEncontradas
-                                .firstOrNull {
-                                    it.archivoKml ==
-                                        nombreOriginal
-                                }
+                        val documentoOriginal =
+                            Regex(
+                                "<Document\\b[\\s\\S]*?</Document>",
+                                RegexOption.IGNORE_CASE
+                            )
+                                .find(
+                                    contenidoOriginal
+                                )
+                                ?.value
 
                         if (
-                            lista != null
+                            documentoOriginal != null
                         ) {
 
-                            val documentoOriginal =
+                            val marcadoresOriginales =
+                                Regex(
+                                    "<Point\\b",
+                                    RegexOption.IGNORE_CASE
+                                )
+                                    .findAll(
+                                        documentoOriginal
+                                    )
+                                    .count()
+
+                            val trayectosOriginales =
+                                Regex(
+                                    "<gx:Track\\b",
+                                    RegexOption.IGNORE_CASE
+                                )
+                                    .findAll(
+                                        documentoOriginal
+                                    )
+                                    .count()
+
+                            marcadoresAntes +=
+                                marcadoresOriginales
+
+                            trayectosAntes +=
+                                trayectosOriginales
+
+                            val documentoLimpio =
+                                eliminarMarcadoresDuplicados(
+                                    eliminarTracksDuplicados(
+                                        documentoOriginal
+                                    )
+                                )
+
+                            val marcadoresLimpios =
+                                Regex(
+                                    "<Point\\b",
+                                    RegexOption.IGNORE_CASE
+                                )
+                                    .findAll(
+                                        documentoLimpio
+                                    )
+                                    .count()
+
+                            val trayectosLimpios =
+                                Regex(
+                                    "<gx:Track\\b",
+                                    RegexOption.IGNORE_CASE
+                                )
+                                    .findAll(
+                                        documentoLimpio
+                                    )
+                                    .count()
+
+                            marcadoresDespues +=
+                                marcadoresLimpios
+
+                            trayectosDespues +=
+                                trayectosLimpios
+
+                            val inicioDocumento =
                                 Regex(
                                     "<Document\\b[\\s\\S]*?</Document>",
                                     RegexOption.IGNORE_CASE
@@ -830,106 +966,26 @@ class MainActivity : Activity() {
                                     .find(
                                         contenidoOriginal
                                     )
-                                    ?.value
 
                             if (
-                                documentoOriginal != null
+                                inicioDocumento != null
                             ) {
 
-                                val marcadoresOriginales =
-                                    Regex(
-                                        "<Point\\b",
-                                        RegexOption.IGNORE_CASE
-                                    )
-                                        .findAll(
-                                            documentoOriginal
-                                        )
-                                        .count()
-
-                                val trayectosOriginales =
-                                    Regex(
-                                        "<gx:Track\\b",
-                                        RegexOption.IGNORE_CASE
-                                    )
-                                        .findAll(
-                                            documentoOriginal
-                                        )
-                                        .count()
-
-                                marcadoresAntes +=
-                                    marcadoresOriginales
-
-                                trayectosAntes +=
-                                    trayectosOriginales
-
-                                val documentoLimpio =
-                                    eliminarMarcadoresDuplicados(
-                                        eliminarTracksDuplicados(
-                                            documentoOriginal
-                                        )
+                                val kmlFinal =
+                                    contenidoOriginal.substring(
+                                        0,
+                                        inicioDocumento.range.first
+                                    ) +
+                                    documentoLimpio +
+                                    contenidoOriginal.substring(
+                                        inicioDocumento.range.last + 1
                                     )
 
-                                val marcadoresLimpios =
-                                    Regex(
-                                        "<Point\\b",
-                                        RegexOption.IGNORE_CASE
+                                zipSalida.write(
+                                    kmlFinal.toByteArray(
+                                        Charsets.UTF_8
                                     )
-                                        .findAll(
-                                            documentoLimpio
-                                        )
-                                        .count()
-
-                                val trayectosLimpios =
-                                    Regex(
-                                        "<gx:Track\\b",
-                                        RegexOption.IGNORE_CASE
-                                    )
-                                        .findAll(
-                                            documentoLimpio
-                                        )
-                                        .count()
-
-                                marcadoresDespues +=
-                                    marcadoresLimpios
-
-                                trayectosDespues +=
-                                    trayectosLimpios
-
-                                val inicioDocumento =
-                                    Regex(
-                                        "<Document\\b[\\s\\S]*?</Document>",
-                                        RegexOption.IGNORE_CASE
-                                    )
-                                        .find(
-                                            contenidoOriginal
-                                        )
-
-                                if (
-                                    inicioDocumento != null
-                                ) {
-
-                                    val kmlFinal =
-                                        contenidoOriginal.substring(
-                                            0,
-                                            inicioDocumento.range.first
-                                        ) +
-                                        documentoLimpio +
-                                        contenidoOriginal.substring(
-                                            inicioDocumento.range.last + 1
-                                        )
-
-                                    zipSalida.write(
-                                        kmlFinal.toByteArray(
-                                            Charsets.UTF_8
-                                        )
-                                    )
-
-                                } else {
-
-                                    zipSalida.write(
-                                        entradaOriginal.datos
-                                    )
-                                }
+                                )
 
                             } else {
 
@@ -1141,9 +1197,6 @@ class MainActivity : Activity() {
 
     // ================================================================
     // GRUPO DE ORDENACIÓN
-    //
-    // 0 = Provincia-Ciudad
-    // 1 = cualquier otro nombre
     // ================================================================
 
     private fun claveGrupo(
@@ -1171,10 +1224,6 @@ class MainActivity : Activity() {
 
     // ================================================================
     // CLAVE DE ORDENACIÓN
-    //
-    // Alicante-Altea Wikiloc...
-    //         ↓
-    // alicante-altea
     // ================================================================
 
     private fun claveOrdenacion(
