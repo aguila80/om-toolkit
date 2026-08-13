@@ -83,7 +83,7 @@ class MainActivity : Activity() {
             TextView(this)
 
         version.text =
-            "VERSIÓN 1.1"
+            "VERSIÓN 1.2"
 
         version.textSize =
             24f
@@ -237,6 +237,22 @@ class MainActivity : Activity() {
 
                 entradasOriginales.clear()
 
+                // ====================================================
+                // LEER EL ZIP Y ELIMINAR DUPLICADOS AQUÍ
+                //
+                // Si el mismo nombre aparece otra vez:
+                //
+                // 1. Si el contenido es idéntico:
+                //    ignoramos la segunda copia.
+                //
+                // 2. Si el contenido es diferente:
+                //    conservamos ambas y damos a la segunda
+                //    un nombre _DUPLICADO_2.
+                // ====================================================
+
+                val nombresLeidos =
+                    mutableMapOf<String, ByteArray>()
+
                 val zip =
                     ZipInputStream(
                         ByteArrayInputStream(bytes)
@@ -252,9 +268,58 @@ class MainActivity : Activity() {
                     val datos =
                         zip.readBytes()
 
+                    val nombreOriginal =
+                        entradaZip.name
+
+                    var nombreFinal =
+                        nombreOriginal
+
+                    val anterior =
+                        nombresLeidos[
+                            nombreOriginal
+                        ]
+
+                    if (
+                        anterior != null
+                    ) {
+
+                        if (
+                            anterior.contentEquals(
+                                datos
+                            )
+                        ) {
+
+                            // ========================================
+                            // DUPLICADO IDÉNTICO
+                            // ========================================
+
+                            entradaZip =
+                                zip.nextEntry
+
+                            continue
+
+                        } else {
+
+                            // ========================================
+                            // MISMO NOMBRE, CONTENIDO DIFERENTE
+                            // ========================================
+
+                            nombreFinal =
+                                nombreDuplicadoSeguro(
+                                    nombreOriginal,
+                                    nombresLeidos
+                                )
+                        }
+                    }
+
+                    nombresLeidos[
+                        nombreFinal
+                    ] =
+                        datos
+
                     entradasOriginales.add(
                         EntradaZip(
-                            entradaZip.name,
+                            nombreFinal,
                             datos
                         )
                     )
@@ -411,7 +476,7 @@ class MainActivity : Activity() {
                     "quedarán ordenadas al guardar."
 
                 // ====================================================
-                // BOTÓN ÚNICO DE GUARDADO
+                // BOTÓN DE GUARDADO
                 // ====================================================
 
                 val guardarBackup =
@@ -668,18 +733,16 @@ class MainActivity : Activity() {
 
                 // ====================================================
                 // CREAR EL NUEVO KMZ
+                //
+                // IMPORTANTE:
+                // Aquí ya no necesitamos ningún control de duplicados.
+                // Los nombres ya son únicos desde la lectura.
                 // ====================================================
 
                 val zipSalida =
                     ZipOutputStream(
                         salida
                     )
-
-                val nombresEscritos =
-                    mutableMapOf<String, ByteArray>()
-
-                val nombresDuplicadosDiferentes =
-                    mutableListOf<String>()
 
                 var marcadoresAntes =
                     0
@@ -701,63 +764,6 @@ class MainActivity : Activity() {
                     val nombreOriginal =
                         entradaOriginal.nombre
 
-                    // =================================================
-                    // CONTROL DE ENTRADAS ZIP DUPLICADAS
-                    // =================================================
-
-                    val copiaAnterior =
-                        nombresEscritos[
-                            nombreOriginal
-                        ]
-
-                    var nombreSalida =
-                        nombreOriginal
-
-                    if (
-                        copiaAnterior != null
-                    ) {
-
-                        if (
-                            copiaAnterior.contentEquals(
-                                entradaOriginal.datos
-                            )
-                        ) {
-
-                            // =========================================
-                            // DUPLICADO IDÉNTICO:
-                            // NO SE VUELVE A ESCRIBIR
-                            // =========================================
-
-                            continue
-
-                        } else {
-
-                            // =========================================
-                            // MISMO NOMBRE PERO CONTENIDO DIFERENTE:
-                            // CONSERVAMOS AMBOS
-                            // =========================================
-
-                            nombreSalida =
-                                nombreDuplicadoSeguro(
-                                    nombreOriginal,
-                                    nombresEscritos
-                                )
-
-                            nombresDuplicadosDiferentes.add(
-                                nombreOriginal
-                            )
-                        }
-                    }
-
-                    // =================================================
-                    // El nombre definitivo queda registrado
-                    // =================================================
-
-                    nombresEscritos[
-                        nombreSalida
-                    ] =
-                        entradaOriginal.datos
-
                     val nombreFinal =
                         nombreOriginal
                             .substringAfterLast("/")
@@ -777,7 +783,7 @@ class MainActivity : Activity() {
 
                     val nuevaEntrada =
                         ZipEntry(
-                            nombreSalida
+                            nombreOriginal
                         )
 
                     zipSalida.putNextEntry(
@@ -980,7 +986,7 @@ class MainActivity : Activity() {
                     trayectosAntes -
                     trayectosDespues
 
-                var mensaje =
+                resultado.text =
                     "✅ BACKUP COMPLETO GUARDADO\n\n" +
                     "📁 Listas: " +
                     listasEncontradas.size +
@@ -995,31 +1001,9 @@ class MainActivity : Activity() {
                     eliminadosMarcadores +
                     "\n" +
                     "🚶 Trayectos eliminados: " +
-                    eliminadosTrayectos
-
-                if (
-                    nombresDuplicadosDiferentes.isNotEmpty()
-                ) {
-
-                    mensaje +=
-                        "\n\n" +
-                        "⚠️ ARCHIVOS CON MISMO NOMBRE " +
-                        "PERO CONTENIDO DIFERENTE: " +
-                        nombresDuplicadosDiferentes.size
-
-                } else {
-
-                    mensaje +=
-                        "\n\n" +
-                        "✅ No había archivos con " +
-                        "contenido diferente bajo el mismo nombre."
-                }
-
-                mensaje +=
-                    "\n\n💾 OrganicMaps_limpio_ordenado.kmz"
-
-                resultado.text =
-                    mensaje
+                    eliminadosTrayectos +
+                    "\n\n" +
+                    "💾 OrganicMaps_limpio_ordenado.kmz"
 
             } catch (
                 e: Exception
