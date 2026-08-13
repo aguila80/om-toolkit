@@ -26,64 +26,137 @@ class MainActivity : Activity() {
 
     data class ListaKml(
         val nombre: String,
-        val documento: String,
-        val marcadores: Int,
-        val trayectos: Int
+        val documento: String
     )
 
-    var entradasOriginales = mutableListOf<EntradaZip>()
+    var entradasOriginales =
+        mutableListOf<EntradaZip>()
 
-    var nombreKmlOriginal = "OrganicMaps.kml"
+    var listasEncontradas =
+        mutableListOf<ListaKml>()
 
-    var cabeceraKml = ""
-    var cierreKml = ""
+    var duplicadosZip =
+        mutableListOf<String>()
 
-    var listasEncontradas = mutableListOf<ListaKml>()
-
-    var listaSeleccionada: ListaKml? = null
-
-    override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(
+        savedInstanceState: Bundle?
+    ) {
         super.onCreate(savedInstanceState)
 
-        val scroll = ScrollView(this)
+        val scroll =
+            ScrollView(this)
 
-        val pantalla = LinearLayout(this)
-        pantalla.orientation = LinearLayout.VERTICAL
-        pantalla.gravity = Gravity.CENTER
-        pantalla.setPadding(40, 40, 40, 40)
+        val pantalla =
+            LinearLayout(this)
 
-        val titulo = TextView(this)
-        titulo.text = "OM Toolkit"
-        titulo.textSize = 32f
-        titulo.setTypeface(null, Typeface.BOLD)
-        titulo.gravity = Gravity.CENTER
+        pantalla.orientation =
+            LinearLayout.VERTICAL
 
-        val version = TextView(this)
-        version.text = "VERSIÓN 1.0"
-        version.textSize = 24f
-        version.setTextColor(Color.rgb(0, 140, 70))
-        version.gravity = Gravity.CENTER
-        version.setPadding(0, 30, 0, 30)
+        pantalla.gravity =
+            Gravity.CENTER
 
-        val texto = TextView(this)
-        texto.text = "Separador de listas Organic Maps"
-        texto.textSize = 20f
-        texto.gravity = Gravity.CENTER
+        pantalla.setPadding(
+            40,
+            40,
+            40,
+            40
+        )
 
-        boton = TextView(this)
-        boton.text = "\n   📂  SELECCIONAR KMZ   \n"
-        boton.textSize = 20f
-        boton.gravity = Gravity.CENTER
-        boton.setPadding(20, 30, 20, 30)
+        val titulo =
+            TextView(this)
 
-        resultado = TextView(this)
-        resultado.text = ""
-        resultado.textSize = 18f
-        resultado.gravity = Gravity.CENTER
-        resultado.setPadding(10, 30, 10, 20)
+        titulo.text =
+            "OM Toolkit"
 
-        listaContenedor = LinearLayout(this)
-        listaContenedor.orientation = LinearLayout.VERTICAL
+        titulo.textSize =
+            32f
+
+        titulo.setTypeface(
+            null,
+            Typeface.BOLD
+        )
+
+        titulo.gravity =
+            Gravity.CENTER
+
+        val version =
+            TextView(this)
+
+        version.text =
+            "VERSIÓN 1.3"
+
+        version.textSize =
+            24f
+
+        version.setTextColor(
+            Color.rgb(0, 140, 70)
+        )
+
+        version.gravity =
+            Gravity.CENTER
+
+        version.setPadding(
+            0,
+            30,
+            0,
+            30
+        )
+
+        val texto =
+            TextView(this)
+
+        texto.text =
+            "Diagnóstico ZIP de Organic Maps"
+
+        texto.textSize =
+            20f
+
+        texto.gravity =
+            Gravity.CENTER
+
+        boton =
+            TextView(this)
+
+        boton.text =
+            "\n   📂  SELECCIONAR BACKUP KMZ   \n"
+
+        boton.textSize =
+            20f
+
+        boton.gravity =
+            Gravity.CENTER
+
+        boton.setPadding(
+            20,
+            30,
+            20,
+            30
+        )
+
+        resultado =
+            TextView(this)
+
+        resultado.text =
+            ""
+
+        resultado.textSize =
+            18f
+
+        resultado.gravity =
+            Gravity.CENTER
+
+        resultado.setPadding(
+            10,
+            30,
+            10,
+            20
+        )
+
+        listaContenedor =
+            LinearLayout(this)
+
+        listaContenedor.orientation =
+            LinearLayout.VERTICAL
 
         pantalla.addView(titulo)
         pantalla.addView(version)
@@ -94,17 +167,22 @@ class MainActivity : Activity() {
 
         boton.setOnClickListener {
 
-            val intent = android.content.Intent(
-                android.content.Intent.ACTION_OPEN_DOCUMENT
-            )
+            val intent =
+                android.content.Intent(
+                    android.content.Intent.ACTION_OPEN_DOCUMENT
+                )
 
-            intent.type = "application/vnd.google-earth.kmz"
+            intent.type =
+                "application/vnd.google-earth.kmz"
 
             intent.addCategory(
                 android.content.Intent.CATEGORY_OPENABLE
             )
 
-            startActivityForResult(intent, 100)
+            startActivityForResult(
+                intent,
+                100
+            )
         }
 
         scroll.addView(pantalla)
@@ -117,6 +195,7 @@ class MainActivity : Activity() {
         resultCode: Int,
         data: android.content.Intent?
     ) {
+
         super.onActivityResult(
             requestCode,
             resultCode,
@@ -124,7 +203,7 @@ class MainActivity : Activity() {
         )
 
         // ============================================================
-        // ABRIR KMZ
+        // LEER KMZ
         // ============================================================
 
         if (
@@ -132,12 +211,14 @@ class MainActivity : Activity() {
             resultCode == RESULT_OK
         ) {
 
-            val archivo = data?.data ?: return
+            val archivo =
+                data?.data ?: return
 
             try {
 
                 val entrada =
-                    contentResolver.openInputStream(archivo)
+                    contentResolver
+                        .openInputStream(archivo)
 
                 if (entrada == null) {
 
@@ -153,6 +234,15 @@ class MainActivity : Activity() {
                 entrada.close()
 
                 entradasOriginales.clear()
+                listasEncontradas.clear()
+                duplicadosZip.clear()
+
+                // ====================================================
+                // LEER TODAS LAS ENTRADAS DEL ZIP
+                // ====================================================
+
+                val nombresYaLeidos =
+                    mutableSetOf<String>()
 
                 val zip =
                     ZipInputStream(
@@ -162,35 +252,50 @@ class MainActivity : Activity() {
                 var entradaZip =
                     zip.nextEntry
 
-                var contenidoKml = ""
+                var totalEntradasLeidas =
+                    0
 
-                while (entradaZip != null) {
+                while (
+                    entradaZip != null
+                ) {
+
+                    val nombre =
+                        entradaZip.name
 
                     val datos =
                         zip.readBytes()
 
+                    totalEntradasLeidas++
+
+                    // ================================================
+                    // DETECTAR NOMBRE DUPLICADO
+                    // ================================================
+
+                    if (
+                        nombresYaLeidos.contains(
+                            nombre
+                        )
+                    ) {
+
+                        duplicadosZip.add(
+                            nombre
+                        )
+                    }
+
+                    nombresYaLeidos.add(
+                        nombre
+                    )
+
+                    // ================================================
+                    // CONSERVAMOS LA ENTRADA
+                    // ================================================
+
                     entradasOriginales.add(
                         EntradaZip(
-                            entradaZip.name,
+                            nombre,
                             datos
                         )
                     )
-
-                    if (
-                        entradaZip.name
-                            .lowercase()
-                            .endsWith(".kml")
-                    ) {
-
-                        nombreKmlOriginal =
-                            entradaZip.name
-
-                        contenidoKml =
-                            String(
-                                datos,
-                                Charsets.UTF_8
-                            )
-                    }
 
                     entradaZip =
                         zip.nextEntry
@@ -198,115 +303,75 @@ class MainActivity : Activity() {
 
                 zip.close()
 
-                if (contenidoKml.isEmpty()) {
-
-                    resultado.text =
-                        "❌ No se encontró ningún KML"
-
-                    return
-                }
-
                 // ====================================================
-                // CONSERVAR EXACTAMENTE LA CABECERA DEL KML
+                // BUSCAR LISTAS KML
                 // ====================================================
 
-                val kmlInicio =
-                    Regex(
-                        "<kml\\b[^>]*>",
-                        RegexOption.IGNORE_CASE
-                    )
-                        .find(contenidoKml)
+                val archivosKml =
+                    entradasOriginales.filter {
 
-                if (kmlInicio == null) {
+                        val nombre =
+                            it.nombre.lowercase()
 
-                    resultado.text =
-                        "❌ KML no válido"
+                        nombre.endsWith(".kml") &&
+                        !nombre.substringAfterLast("/")
+                            .equals(
+                                "doc.kml",
+                                ignoreCase = true
+                            )
+                    }
 
-                    return
-                }
+                for (
+                    archivoKml
+                    in archivosKml
+                ) {
 
-                cabeceraKml =
-                    contenidoKml.substring(
-                        0,
-                        kmlInicio.range.last + 1
-                    )
+                    val contenido =
+                        String(
+                            archivoKml.datos,
+                            Charsets.UTF_8
+                        )
 
-                cierreKml = "</kml>"
-
-                // ====================================================
-                // EXTRAER DOCUMENTS
-                // ====================================================
-
-                val documentos =
-                    Regex(
-                        "<Document\\b[\\s\\S]*?</Document>",
-                        RegexOption.IGNORE_CASE
-                    )
-                        .findAll(contenidoKml)
-                        .map {
-                            it.value
-                        }
-                        .toList()
-
-                if (documentos.isEmpty()) {
-
-                    resultado.text =
-                        "❌ No se encontraron listas"
-
-                    return
-                }
-
-                listasEncontradas.clear()
-
-                // ====================================================
-                // ANALIZAR CADA DOCUMENT
-                // ====================================================
-
-                for (documento in documentos) {
-
-                    val nombres =
+                    val documento =
                         Regex(
-                            "<name>([\\s\\S]*?)</name>",
+                            "<Document\\b[\\s\\S]*?</Document>",
                             RegexOption.IGNORE_CASE
                         )
-                            .findAll(documento)
-                            .map {
-                                it.groupValues[1].trim()
-                            }
-                            .toList()
+                            .find(
+                                contenido
+                            )
+                            ?.value
 
-                    val nombre =
-                        nombres.firstOrNull()
-                            ?: "Lista sin nombre"
+                    if (
+                        documento != null
+                    ) {
 
-                    val marcadores =
-                        Regex(
-                            "<Point\\b",
-                            RegexOption.IGNORE_CASE
+                        val nombre =
+                            Regex(
+                                "<name>([\\s\\S]*?)</name>",
+                                RegexOption.IGNORE_CASE
+                            )
+                                .find(
+                                    documento
+                                )
+                                ?.groupValues
+                                ?.get(1)
+                                ?.trim()
+                                ?: archivoKml.nombre
+                                    .substringAfterLast("/")
+                                    .removeSuffix(".kml")
+
+                        listasEncontradas.add(
+                            ListaKml(
+                                nombre,
+                                documento
+                            )
                         )
-                            .findAll(documento)
-                            .count()
-
-                    val trayectos =
-                        Regex(
-                            "<gx:Track\\b",
-                            RegexOption.IGNORE_CASE
-                        )
-                            .findAll(documento)
-                            .count()
-
-                    listasEncontradas.add(
-                        ListaKml(
-                            nombre,
-                            documento,
-                            marcadores,
-                            trayectos
-                        )
-                    )
+                    }
                 }
 
                 // ====================================================
-                // ORDEN ALFABÉTICO
+                // ORDEN SOLO VISUAL
                 // ====================================================
 
                 listasEncontradas =
@@ -317,35 +382,108 @@ class MainActivity : Activity() {
                         .toMutableList()
 
                 // ====================================================
-                // MOSTRAR LISTAS
+                // MOSTRAR DIAGNÓSTICO
                 // ====================================================
 
                 listaContenedor.removeAllViews()
 
-                resultado.text =
-                    "✅ KMZ leído correctamente\n\n" +
-                    "📁 LISTAS ENCONTRADAS: " +
+                var mensaje =
+                    "✅ KMZ LEÍDO CORRECTAMENTE\n\n" +
+                    "📁 Listas encontradas: " +
                     listasEncontradas.size +
-                    "\n\nSelecciona la lista que quieres guardar."
+                    "\n\n" +
+                    "📦 Entradas ZIP leídas: " +
+                    totalEntradasLeidas +
+                    "\n\n" +
+                    "🔎 Nombres ZIP duplicados: " +
+                    duplicadosZip.size
 
-                for (lista in listasEncontradas) {
+                if (
+                    duplicadosZip.isNotEmpty()
+                ) {
 
-                    mostrarLista(lista)
+                    mensaje +=
+                        "\n\n⚠️ PRIMEROS DUPLICADOS:\n"
+
+                    duplicadosZip
+                        .take(5)
+                        .forEach {
+
+                            mensaje +=
+                                "\n• " + it
+                        }
                 }
 
-                boton.text =
-                    "📂 SELECCIONAR OTRO KMZ"
-
-            } catch (e: Exception) {
+                mensaje +=
+                    "\n\n💾 Pulsa GUARDAR para " +
+                    "hacer la prueba de reconstrucción."
 
                 resultado.text =
-                    "❌ Error al analizar el KMZ:\n\n" +
+                    mensaje
+
+                // ====================================================
+                // BOTÓN GUARDAR
+                // ====================================================
+
+                val guardar =
+                    TextView(this)
+
+                guardar.text =
+                    "\n   💾 GUARDAR KMZ DE PRUEBA   \n"
+
+                guardar.textSize =
+                    20f
+
+                guardar.gravity =
+                    Gravity.CENTER
+
+                guardar.setPadding(
+                    20,
+                    30,
+                    20,
+                    30
+                )
+
+                guardar.setOnClickListener {
+
+                    val intent =
+                        android.content.Intent(
+                            android.content.Intent.ACTION_CREATE_DOCUMENT
+                        )
+
+                    intent.type =
+                        "application/vnd.google-earth.kmz"
+
+                    intent.putExtra(
+                        android.content.Intent.EXTRA_TITLE,
+                        "OrganicMaps_diagnostico_c.kmz"
+                    )
+
+                    startActivityForResult(
+                        intent,
+                        200
+                    )
+                }
+
+                listaContenedor.addView(
+                    guardar
+                )
+
+                boton.text =
+                    "📂 SELECCIONAR OTRO BACKUP KMZ"
+
+            } catch (
+                e: Exception
+            ) {
+
+                resultado.text =
+                    "❌ ERROR AL LEER KMZ\n\n" +
                     e.message
             }
         }
 
         // ============================================================
-        // GUARDAR LISTA
+        // GUARDAR KMZ DE DIAGNÓSTICO
         // ============================================================
 
         if (
@@ -356,16 +494,12 @@ class MainActivity : Activity() {
             val destino =
                 data?.data
 
-            val lista =
-                listaSeleccionada
-
             if (
-                destino == null ||
-                lista == null
+                destino == null
             ) {
 
                 resultado.text =
-                    "❌ No hay ninguna lista seleccionada"
+                    "❌ No se seleccionó destino"
 
                 return
             }
@@ -376,7 +510,9 @@ class MainActivity : Activity() {
                     contentResolver
                         .openOutputStream(destino)
 
-                if (salida == null) {
+                if (
+                    salida == null
+                ) {
 
                     resultado.text =
                         "❌ No se pudo crear el archivo"
@@ -384,386 +520,103 @@ class MainActivity : Activity() {
                     return
                 }
 
-                // ====================================================
-                // ELIMINAR gx:Track DUPLICADOS IDÉNTICOS
-                // ====================================================
-
-                val documentoLimpio =
-    limpiarMarcadoresDuplicados(
-        eliminarTracksDuplicados(
-            lista.documento
-        )
-    )
-
-                // ====================================================
-                // CONSTRUIR KML FINAL
-                //
-                // SOLO:
-                // cabecera ORIGINAL
-                // +
-                // Document ORIGINAL
-                // +
-                // cierre ORIGINAL
-                //
-                // No creamos un Document nuevo.
-                // ====================================================
-
-                val kmlFinal =
-                    cabeceraKml +
-                    "\n" +
-                    documentoLimpio +
-                    "\n" +
-                    cierreKml +
-                    "\n"
-
-                // ====================================================
-                // CREAR ZIP
-                //
-                // Conservamos todos los archivos originales
-                // y sustituimos únicamente el KML.
-                // ====================================================
-
                 val zipSalida =
-                    ZipOutputStream(salida)
+                    ZipOutputStream(
+                        salida
+                    )
+
+                val nombresEscritos =
+                    mutableSetOf<String>()
+
+                var entradasGuardadas =
+                    0
+
+                var duplicadosOmitidos =
+                    0
+
+                // ====================================================
+                // COPIAR LAS ENTRADAS
+                // ====================================================
 
                 for (
                     entradaOriginal
                     in entradasOriginales
                 ) {
 
-                    val esKml =
+                    val nombreOriginal =
                         entradaOriginal.nombre
-                            .lowercase()
-                            .endsWith(".kml")
 
-                    if (esKml) {
+                    // =================================================
+                    // ZIP NO ADMITE DOS ENTRADAS CON EL MISMO NOMBRE
+                    // =================================================
 
-                        val nuevaEntrada =
-                            ZipEntry(
-                                entradaOriginal.nombre
-                            )
-
-                        zipSalida.putNextEntry(
-                            nuevaEntrada
+                    if (
+                        nombresEscritos.contains(
+                            nombreOriginal
                         )
+                    ) {
 
-                        zipSalida.write(
-                            kmlFinal.toByteArray(
-                                Charsets.UTF_8
-                            )
-                        )
+                        duplicadosOmitidos++
 
-                        zipSalida.closeEntry()
-
-                    } else {
-
-                        val nuevaEntrada =
-                            ZipEntry(
-                                entradaOriginal.nombre
-                            )
-
-                        zipSalida.putNextEntry(
-                            nuevaEntrada
-                        )
-
-                        zipSalida.write(
-                            entradaOriginal.datos
-                        )
-
-                        zipSalida.closeEntry()
+                        continue
                     }
+
+                    val nuevaEntrada =
+                        ZipEntry(
+                            nombreOriginal
+                        )
+
+                    zipSalida.putNextEntry(
+                        nuevaEntrada
+                    )
+
+                    zipSalida.write(
+                        entradaOriginal.datos
+                    )
+
+                    zipSalida.closeEntry()
+
+                    nombresEscritos.add(
+                        nombreOriginal
+                    )
+
+                    entradasGuardadas++
                 }
 
                 zipSalida.close()
                 salida.close()
 
                 // ====================================================
-                // CONTAR LO QUE REALMENTE HEMOS GUARDADO
+                // RESULTADO
                 // ====================================================
 
-                val puntosFinales =
-                    Regex(
-                        "<Point\\b",
-                        RegexOption.IGNORE_CASE
-                    )
-                        .findAll(
-                            documentoLimpio
-                        )
-                        .count()
+                resultado.text =
+                    "✅ KMZ DE DIAGNÓSTICO GUARDADO\n\n" +
+                    "📁 Listas encontradas: " +
+                    listasEncontradas.size +
+                    "\n\n" +
+                    "📦 Entradas ZIP leídas: " +
+                    entradasOriginales.size +
+                    "\n\n" +
+                    "💾 Entradas ZIP guardadas: " +
+                    entradasGuardadas +
+                    "\n\n" +
+                    "⚠️ Duplicados omitidos: " +
+                    duplicadosOmitidos +
+                    "\n\n" +
+                    "Este KMZ NO ha sido ordenado " +
+                    "ni limpiado.\n\n" +
+                    "Solo sirve para diagnosticar " +
+                    "la estructura del backup."
 
-                val tracksFinales =
-                    Regex(
-                        "<gx:Track\\b",
-                        RegexOption.IGNORE_CASE
-                    )
-                        .findAll(
-                            documentoLimpio
-                        )
-                        .count()
+            } catch (
+                e: Exception
+            ) {
 
                 resultado.text =
-                    "✅ KMZ GUARDADO\n\n" +
-                    "📁 ${lista.nombre}\n\n" +
-                    "📍 Marcadores: $puntosFinales\n" +
-                    "🚶 Trayectos: $tracksFinales\n\n" +
-                    "La estructura original del KML " +
-                    "se ha conservado."
-
-            } catch (e: Exception) {
-
-                resultado.text =
-                    "❌ Error al guardar el KMZ:\n\n" +
+                    "❌ ERROR AL GUARDAR KMZ\n\n" +
                     e.message
             }
         }
-    }
-
-    // ================================================================
-    // MOSTRAR LISTA
-    // ================================================================
-
-    private fun mostrarLista(
-        lista: ListaKml
-    ) {
-
-        val separador =
-            TextView(this)
-
-        separador.text =
-            "────────────────────────"
-
-        separador.gravity =
-            Gravity.CENTER
-
-        val nombre =
-            TextView(this)
-
-        nombre.text =
-            "📁 ${lista.nombre}"
-
-        nombre.textSize = 20f
-
-        nombre.setTypeface(
-            null,
-            Typeface.BOLD
-        )
-
-        nombre.gravity =
-            Gravity.CENTER
-
-        nombre.setPadding(
-            0,
-            20,
-            0,
-            10
-        )
-
-        val datos =
-            TextView(this)
-
-        datos.text =
-            "📍 Marcadores: ${lista.marcadores}\n" +
-            "🚶 Trayectos: ${lista.trayectos}"
-
-        datos.textSize = 17f
-        datos.gravity =
-            Gravity.CENTER
-
-        val guardar =
-            TextView(this)
-
-        guardar.text =
-            "\n   💾 GUARDAR ESTA LISTA   \n"
-
-        guardar.textSize = 19f
-        guardar.gravity =
-            Gravity.CENTER
-
-        guardar.setPadding(
-            20,
-            20,
-            20,
-            20
-        )
-
-        guardar.setOnClickListener {
-
-            listaSeleccionada =
-                lista
-
-            resultado.text =
-                "📌 LISTA SELECCIONADA\n\n" +
-                "📁 ${lista.nombre}\n" +
-                "📍 ${lista.marcadores} marcadores\n" +
-                "🚶 ${lista.trayectos} trayectos"
-
-            val intent =
-                android.content.Intent(
-                    android.content.Intent.ACTION_CREATE_DOCUMENT
-                )
-
-            intent.type =
-                "application/vnd.google-earth.kmz"
-
-            intent.putExtra(
-                android.content.Intent.EXTRA_TITLE,
-                nombreSeguro(
-                    lista.nombre
-                ) + ".kmz"
-            )
-
-            startActivityForResult(
-                intent,
-                200
-            )
-        }
-
-        listaContenedor.addView(
-            separador
-        )
-
-        listaContenedor.addView(
-            nombre
-        )
-
-        listaContenedor.addView(
-            datos
-        )
-
-        listaContenedor.addView(
-            guardar
-        )
-    }
-
-    // ================================================================
-    // ELIMINAR SOLO gx:Track COMPLETAMENTE IDÉNTICOS
-    // ================================================================
-
-    private fun eliminarTracksDuplicados(
-        documento: String
-    ): String {
-
-        val tracks =
-            Regex(
-                "<gx:Track\\b[\\s\\S]*?</gx:Track>",
-                RegexOption.IGNORE_CASE
-            )
-                .findAll(documento)
-                .map {
-                    it.value
-                }
-                .toList()
-
-        if (tracks.size <= 1) {
-            return documento
-        }
-
-        val vistos =
-            mutableSetOf<String>()
-
-        var resultadoDocumento =
-            documento
-
-        for (track in tracks) {
-
-            if (vistos.contains(track)) {
-
-                resultadoDocumento =
-                    resultadoDocumento.replaceFirst(
-                        track,
-                        ""
-                    )
-
-            } else {
-
-                vistos.add(track)
-            }
-        }
-
-        return resultadoDocumento
-    }
-// ================================================================
-// LIMPIAR MARCADORES DUPLICADOS DENTRO DE CADA LISTA
-// ================================================================
-
-private fun limpiarMarcadoresDuplicados(
-    documento: String
-): String {
-
-    val placemarks =
-        Regex(
-            "<Placemark\\b[\\s\\S]*?</Placemark>",
-            RegexOption.IGNORE_CASE
-        )
-            .findAll(documento)
-            .map { it.value }
-            .toList()
-
-    val vistos = mutableSetOf<String>()
-
-    var resultadoDocumento = documento
-
-    for (placemark in placemarks) {
-
-        val nombre =
-            Regex(
-                "<name>([\\s\\S]*?)</name>",
-                RegexOption.IGNORE_CASE
-            )
-                .find(placemark)
-                ?.groupValues
-                ?.get(1)
-                ?.trim()
-                ?: ""
-
-        val coordenadas =
-            Regex(
-                "<coordinates>([\\s\\S]*?)</coordinates>",
-                RegexOption.IGNORE_CASE
-            )
-                .find(placemark)
-                ?.groupValues
-                ?.get(1)
-                ?.trim()
-                ?: ""
-
-        val clave =
-            nombre + "|" + coordenadas
-
-        if (clave in vistos) {
-
-            resultadoDocumento =
-                resultadoDocumento.replaceFirst(
-                    placemark,
-                    ""
-                )
-
-        } else {
-
-            vistos.add(clave)
-        }
-    }
-
-    return resultadoDocumento
-}
-    // ================================================================
-    // LIMPIAR NOMBRE DE ARCHIVO
-    // ================================================================
-
-    private fun nombreSeguro(
-        nombre: String
-    ): String {
-
-        return nombre
-            .replace("/", "-")
-            .replace("\\", "-")
-            .replace(":", "-")
-            .replace("*", "-")
-            .replace("?", "")
-            .replace("\"", "")
-            .replace("<", "")
-            .replace(">", "")
-            .replace("|", "-")
-            .trim()
     }
 }
